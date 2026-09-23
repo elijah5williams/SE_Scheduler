@@ -1,0 +1,36 @@
+{% extends "planner/base.html" %}
+
+{% block title %}{{ title }} · Athlete Academic Assistant{% endblock %}
+
+{% block content %}
+<div class="form-layout">
+    <section class="form-intro">
+        <span class="eyebrow">{% if editing %}Make a change{% else %}Plan ahead{% endif %}</span>
+        <h1>{{ title }}.</h1>
+        {% if form_type == 'event' %}
+            <p>Add the time you cannot study. Classes, practices, games, workouts, and meetings all belong here.</p>
+            <div class="tip-card"><span>Smart tip</span><p>Use weekly repeat for regular classes and practices so you only enter them once.</p></div>
+        {% elif form_type == 'routine' %}
+            <p>Add something you want to complete regularly without choosing an exact start time. The generator will place it wherever it fits.</p>
+            <div class="tip-card"><span>Smart tip</span><p>For weekend breakfast, enter 25 minutes, choose Saturday and Sunday, and set the available window from 11:00 AM to 1:30 PM.</p></div>
+        {% else %}
+            <p>Give the planner a deadline and realistic time estimate so it can protect enough study time.</p>
+            <div class="tip-card"><span>Smart tip</span><p>Break very large projects into smaller tasks for a plan that is easier to follow.</p></div>
+        {% endif %}
+    </section>
+    <section class="panel form-panel">
+        <form method="post" class="smart-form" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+            {% for field in form %}
+                <div class="field {% if field.name == 'notes' or field.name == 'weekdays' %}full{% endif %} {% if field.name == 'repeat_weekly' or field.name == 'active' %}checkbox-field{% endif %}" data-field="{{ field.name }}">
+                    {% if field.name == 'repeat_weekly' or field.name == 'active' %}{{ field }}<label for="{{ field.id_for_label }}">{{ field.label }}</label>{% else %}<label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span>*</span>{% endif %}</label>{{ field }}{% endif %}
+                    {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                    {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+            {% endfor %}
+            <div class="form-actions full"><a class="button button-ghost" href="{% if form_type == 'event' %}{% url 'planner:schedule' %}{% elif form_type == 'routine' %}{% url 'planner:study_planner' %}{% else %}{% url 'planner:tasks' %}{% endif %}">Cancel</a><button class="button button-primary" type="submit">{% if editing %}Save changes{% else %}Add to my plan{% endif %}</button></div>
+        </form>
+    </section>
+</div>
+{% endblock %}

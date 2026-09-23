@@ -1,0 +1,22 @@
+{% extends "planner/base.html" %}
+
+{% block title %}Remove item · Athlete Academic Assistant{% endblock %}
+
+{% block content %}
+<section class="panel confirm-card">
+    <span class="confirm-icon">!</span>
+    <span class="eyebrow">Please confirm</span>
+    <h1>Remove “{{ object }}”?</h1>
+    <p>This will permanently remove it from your plan.</p>
+    {% if related_courses %}
+        <div class="related-cleanup">
+            <strong>Also remove related academic work?</strong>
+            <p>Select the course connected to this class. Its assignments, exams, and generated study sessions will also be removed.</p>
+            {% for course in related_courses %}
+                <label><input form="delete-form" type="checkbox" name="related_courses" value="{{ course }}"> {{ course }}</label>
+            {% endfor %}
+        </div>
+    {% endif %}
+    <form method="post" id="delete-form">{% csrf_token %}<a class="button button-ghost" href="{{ cancel_url }}">Keep it</a><button class="button button-danger" type="submit">Yes, remove it</button></form>
+</section>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "planner/base.html" %}
+
+{% block title %}Smart Planner · Athlete Academic Assistant{% endblock %}
+
+{% block content %}
+<section class="planner-hero">
+    <div>
+        <span class="ai-badge">✦ AI-assisted planning</span>
+        <h1>Find the time.<br>Do the work.</h1>
+        <p>The planner considers deadlines, workload, priority, classes, practices, and games to build a realistic study schedule.</p>
+    </div>
+    <form method="post">{% csrf_token %}<button class="button button-light button-large" type="submit">✦ Generate my best plan</button></form>
+</section>
+
+<section class="panel routine-panel">
+    <div class="panel-header">
+        <div><span class="eyebrow">Fits wherever you are free</span><h2>Flexible routines</h2></div>
+        <a class="button button-primary button-small" href="{% url 'planner:routine_create' %}">+ Add routine</a>
+    </div>
+    <div class="routine-list">
+        {% for routine in routines %}
+            <article class="routine-row {% if not routine.active %}inactive{% endif %}">
+                <span class="routine-mark">↻</span>
+                <div><h3>{{ routine.title }}</h3><p>{{ routine.duration_minutes }} minutes · {{ routine.schedule_summary }} · {{ routine.window_summary }}{% if not routine.active %} · Paused{% endif %}</p></div>
+                <div class="routine-actions"><a href="{% url 'planner:routine_update' routine.pk %}">Edit</a><a class="danger-link" href="{% url 'planner:routine_delete' routine.pk %}">Delete</a></div>
+            </article>
+        {% empty %}
+            <div class="routine-empty"><p>Add a flexible routine such as Bible study, stretching, or reading. The generator will choose the time.</p></div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="panel planner-calendar-panel">
+    <div class="panel-header">
+        <div><span class="eyebrow">Your next two weeks</span><h2>Daily game plan</h2></div>
+        <span class="count-badge">{{ planned_blocks }} planned blocks</span>
+    </div>
+    <p class="calendar-intro">Each day shows your commitments, study plan, and deadlines together.</p>
+
+    <div class="planner-calendar">
+        {% for day in calendar_days %}
+            <article class="planner-day {% if day.is_today %}today{% endif %}">
+                <header class="planner-day-header">
+                    <span>{{ day.date|date:"D" }}</span>
+                    <strong>{{ day.date|date:"j" }}</strong>
+                    <small>{{ day.date|date:"M" }}</small>
+                    {% if day.is_today %}<em>Today</em>{% endif %}
+                </header>
+                <div class="planner-day-list">
+                    {% for item in day.items %}
+                        <div class="calendar-plan-item kind-{{ item.kind }}">
+                            <div class="calendar-item-top">
+                                <time>{% if item.kind == 'deadline' %}Due {% endif %}{{ item.time|time:"g:i A" }}{% if item.end_time %}–{{ item.end_time|time:"g:i A" }}{% endif %}</time>
+                                {% if item.kind == 'study' %}
+                                    <form method="post" action="{% url 'planner:session_toggle' item.object.pk %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="planner:study_planner">
+                                        <button class="calendar-check" aria-label="Complete {{ item.title }}">✓</button>
+                                    </form>
+                                {% elif item.kind == 'routine' %}
+                                    <form method="post" action="{% url 'planner:routine_session_toggle' item.object.pk %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="planner:study_planner">
+                                        <button class="calendar-check" aria-label="Complete {{ item.title }}">✓</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                            <span>{{ item.label }}</span>
+                            <h3>{{ item.title }}</h3>
+                            {% if item.detail %}<p>{{ item.detail }}</p>{% endif %}
+                        </div>
+                    {% empty %}
+                        <div class="calendar-open"><span>Open day</span><p>No planned items</p></div>
+                    {% endfor %}
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+<div class="planner-support-grid">
+    <section class="panel insight-panel">
+        <div class="panel-header"><div><span class="eyebrow">Coach's read</span><h2>Smart insights</h2></div></div>
+        <ul class="insight-list">
+            {% for insight in insights %}<li><span>✦</span><p>{{ insight }}</p></li>{% endfor %}
+        </ul>
+    </section>
+    <section class="panel workload-panel">
+        <div class="panel-header"><div><span class="eyebrow">In the queue</span><h2>Workload</h2></div><a href="{% url 'planner:tasks' %}">Manage →</a></div>
+        {% for task in active_tasks|slice:":5" %}
+            <div class="workload-row"><div><span>{{ task.course }}</span><strong>{{ task.title }}</strong></div><span class="priority-pill {{ task.priority }}">{{ task.estimated_minutes }}m</span></div>
+        {% empty %}<p class="muted">No active academic work.</p>{% endfor %}
+    </section>
+</div>
+{% endblock %}

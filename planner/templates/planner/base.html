@@ -1,0 +1,65 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A smart academic planner for college student-athletes.">
+    <title>{% block title %}Athlete Academic Assistant{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'planner/styles.css' %}">
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar" id="sidebar">
+            <a class="brand" href="{% url 'planner:dashboard' %}">
+                <span class="brand-mark">A</span>
+                <span><strong>Athlete</strong><small>Academic Assistant</small></span>
+            </a>
+            <nav class="main-nav" aria-label="Main navigation">
+                <a href="{% url 'planner:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <span class="nav-icon">⌂</span> Dashboard
+                </a>
+                <a href="{% url 'planner:schedule' %}" class="{% if request.resolver_match.url_name == 'schedule' %}active{% endif %}">
+                    <span class="nav-icon">□</span> My Schedule
+                </a>
+                <a href="{% url 'planner:tasks' %}" class="{% if request.resolver_match.url_name == 'tasks' %}active{% endif %}">
+                    <span class="nav-icon">✓</span> Academic Work
+                </a>
+                <a href="{% url 'planner:study_planner' %}" class="{% if request.resolver_match.url_name == 'study_planner' %}active{% endif %}">
+                    <span class="nav-icon">✦</span> Smart Planner
+                </a>
+            </nav>
+            <div class="sidebar-card">
+                <span class="eyebrow">Built for balance</span>
+                <strong>School. Sport. Success.</strong>
+                <p>Keep every commitment in one clear plan.</p>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <button class="menu-button" id="menuButton" aria-label="Open navigation">☰</button>
+                <div class="topbar-date">{% now "l, F j" %}</div>
+                <div class="quick-actions">
+                    <a class="button button-ghost" href="{% url 'planner:event_create' %}">+ Commitment</a>
+                    <a class="button button-primary" href="{% url 'planner:task_create' %}">+ Academic work</a>
+                </div>
+            </header>
+
+            {% if messages %}
+                <div class="messages" aria-live="polite">
+                    {% for message in messages %}
+                        <div class="message {{ message.tags }}">{{ message }}<button aria-label="Dismiss">×</button></div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="page-content">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <script src="{% static 'planner/app.js' %}"></script>
+</body>
+</html>

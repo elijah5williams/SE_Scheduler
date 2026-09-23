@@ -1,0 +1,16 @@
+{% extends "planner/base.html" %}
+
+{% block title %}Remove {{ course }} · Athlete Academic Assistant{% endblock %}
+
+{% block content %}
+<section class="panel confirm-card">
+    <span class="confirm-icon">!</span>
+    <span class="eyebrow">Remove an entire course</span>
+    <h1>Remove {{ course }}?</h1>
+    <p>This removes the course’s academic work and every generated study session connected to it.</p>
+    <div class="removal-summary">
+        {% for task in tasks %}<span>{{ task.get_task_type_display }} · {{ task.title }}</span>{% endfor %}
+    </div>
+    <form method="post">{% csrf_token %}<a class="button button-ghost" href="{{ cancel_url }}">Keep course</a><button class="button button-danger" type="submit">Remove {{ course }}</button></form>
+</section>
+{% endblock %}

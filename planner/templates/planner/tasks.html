@@ -1,0 +1,37 @@
+{% extends "planner/base.html" %}
+
+{% block title %}Academic Work · Athlete Academic Assistant{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div><span class="eyebrow">Deadline control</span><h1>Academic work.</h1><p>Capture every assignment and exam before it catches you by surprise.</p></div>
+    <a class="button button-primary" href="{% url 'planner:task_create' %}">+ Add academic work</a>
+</div>
+
+{% if courses %}
+<section class="course-cleanup-bar">
+    <div><strong>Dropped a class?</strong><span>Remove its assignments and generated study sessions together.</span></div>
+    <div class="course-chips">
+        {% for course in courses %}<a href="{% url 'planner:course_delete' course %}">Remove {{ course }}</a>{% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="panel table-panel">
+    <div class="task-table">
+        <div class="task-table-head"><span>Status</span><span>Work</span><span>Deadline</span><span>Time</span><span>Priority</span><span></span></div>
+        {% for task in tasks %}
+            <article class="task-table-row {% if task.completed %}completed{% endif %}">
+                <form method="post" action="{% url 'planner:task_toggle' task.pk %}">{% csrf_token %}<input type="hidden" name="next" value="planner:tasks"><button class="check-button {% if task.completed %}checked{% endif %}" aria-label="Toggle complete">✓</button></form>
+                <div><span class="tag">{{ task.course }} · {{ task.get_task_type_display }}</span><h3>{{ task.title }}</h3>{% if task.notes %}<p>{{ task.notes|truncatechars:80 }}</p>{% endif %}</div>
+                <div class="deadline {% if task.is_overdue %}danger{% endif %}">{% if task.is_overdue %}<strong>Overdue</strong>{% endif %}<span>{{ task.due_date|date:"M j, Y" }}</span><small>{{ task.due_date|time:"g:i A" }}</small></div>
+                <div><strong>{{ task.estimated_minutes }}</strong><small> minutes</small></div>
+                <div><span class="priority-pill {{ task.priority }}">{{ task.get_priority_display }}</span></div>
+                <div class="row-actions"><a href="{% url 'planner:task_update' task.pk %}">Edit</a><a class="danger-link" href="{% url 'planner:task_delete' task.pk %}">Delete</a></div>
+            </article>
+        {% empty %}
+            <div class="empty-state"><span>▤</span><h2>Your academic list is clear</h2><p>Add an assignment, exam, reading, or project. The smart planner will take it from there.</p><a class="button button-primary" href="{% url 'planner:task_create' %}">Add your first item</a></div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

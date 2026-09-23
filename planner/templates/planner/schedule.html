@@ -1,0 +1,59 @@
+{% extends "planner/base.html" %}
+
+{% block title %}My Schedule · Athlete Academic Assistant{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div><span class="eyebrow">One schedule</span><h1>Academics meet athletics.</h1><p>Your next seven days of classes, training, competition, and protected study time.</p></div>
+    <a class="button button-primary" href="{% url 'planner:event_create' %}">+ Add commitment</a>
+</div>
+
+<section class="week-board">
+    {% for day in days %}
+        <article class="day-column {% if day.date == today %}today{% endif %}">
+            <header><span>{{ day.date|date:"D" }}</span><strong>{{ day.date|date:"j" }}</strong>{% if day.date == today %}<small>Today</small>{% endif %}</header>
+            <div class="day-events">
+                {% for item in day.items %}
+                    <div class="schedule-event type-{{ item.type }}">
+                        <div class="schedule-time">{{ item.time|time:"g:i A" }}–{{ item.end_time|time:"g:i A" }}</div>
+                        <span class="tag">{{ item.label }}</span>
+                        <h3>{{ item.title }}</h3>
+                        {% if item.location %}<p>{{ item.location }}</p>{% endif %}
+                        {% if item.kind == 'event' %}<div class="mini-actions"><a href="{% url 'planner:event_update' item.object.pk %}">Edit</a><a class="danger-link" href="{% url 'planner:event_delete' item.object.pk %}">Delete</a></div>{% endif %}
+                    </div>
+                {% empty %}
+                    <div class="open-day"><span>Open</span><p>No commitments</p></div>
+                {% endfor %}
+            </div>
+        </article>
+    {% endfor %}
+</section>
+
+<div class="legend"><span><i class="class"></i>Class</span><span><i class="practice"></i>Athletics</span><span><i class="study"></i>Study</span><span><i class="routine"></i>Routine</span><span><i class="other"></i>Other</span></div>
+
+<section class="panel manage-panel">
+    <div class="panel-header">
+        <div><span class="eyebrow">Make changes anytime</span><h2>Manage commitments</h2></div>
+        <a class="button button-primary" href="{% url 'planner:event_create' %}">+ Add commitment</a>
+    </div>
+    <p class="manage-intro">Edit class days and times, or remove commitments you no longer have.</p>
+    <div class="commitment-list">
+        {% for event in all_events %}
+            <article class="commitment-row">
+                <span class="commitment-color type-{{ event.event_type }}"></span>
+                <div class="commitment-main">
+                    <span class="tag">{{ event.get_event_type_display }}</span>
+                    <h3>{{ event.title }}</h3>
+                    <p>{{ event.repeat_summary }} · {{ event.start_time|time:"g:i A" }}–{{ event.end_time|time:"g:i A" }}{% if event.location %} · {{ event.location }}{% endif %}</p>
+                </div>
+                <div class="commitment-actions">
+                    <a class="button button-ghost button-small" href="{% url 'planner:event_update' event.pk %}">Edit</a>
+                    <a class="button button-delete button-small" href="{% url 'planner:event_delete' event.pk %}">Delete</a>
+                </div>
+            </article>
+        {% empty %}
+            <div class="empty-state compact"><span>□</span><h3>No commitments yet</h3><p>Add your first class or athletic event.</p></div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "planner/base.html" %}
+
+{% block title %}Dashboard · Athlete Academic Assistant{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div>
+        <span class="eyebrow">Your command center</span>
+        <h1>Own your day.</h1>
+        <p>See what matters, protect your study time, and stay ready for the next deadline.</p>
+    </div>
+    <a href="{% url 'planner:study_planner' %}" class="button button-light">✦ Build my study plan</a>
+</section>
+
+<section class="stat-grid">
+    <article class="stat-card">
+        <span class="stat-icon navy">✓</span>
+        <div><strong>{{ active_tasks }}</strong><span>Active academic items</span></div>
+    </article>
+    <article class="stat-card">
+        <span class="stat-icon green">◷</span>
+        <div><strong>{{ week_sessions }}</strong><span>Study blocks this week</span></div>
+    </article>
+    <article class="stat-card">
+        <span class="stat-icon gold">↗</span>
+        <div><strong>{{ progress }}%</strong><span>Work completed</span></div>
+    </article>
+</section>
+
+<div class="dashboard-grid">
+    <section class="panel agenda-panel">
+        <div class="panel-header">
+            <div><span class="eyebrow">{{ today|date:"l" }}</span><h2>Today's game plan</h2></div>
+            <a href="{% url 'planner:schedule' %}">View week →</a>
+        </div>
+        <div class="timeline">
+            {% for event in today_events %}
+                <article class="timeline-item type-{{ event.event_type }}">
+                    <time>{{ event.start_time|time:"g:i A" }}–{{ event.end_time|time:"g:i A" }}</time>
+                    <span class="timeline-dot"></span>
+                    <div><span class="tag">{{ event.get_event_type_display }}</span><h3>{{ event.title }}</h3>{% if event.location %}<p>{{ event.location }}</p>{% endif %}</div>
+                </article>
+            {% endfor %}
+            {% for session in today_sessions %}
+                <article class="timeline-item type-study">
+                    <time>{{ session.start_time|time:"g:i A" }}–{{ session.end_time|time:"g:i A" }}</time>
+                    <span class="timeline-dot"></span>
+                    <div><span class="tag">Study · {{ session.task.course }}</span><h3>{{ session.task.title }}</h3><p>Focused study block</p></div>
+                </article>
+            {% endfor %}
+            {% for session in today_routines %}
+                <article class="timeline-item type-routine">
+                    <time>{{ session.start_time|time:"g:i A" }}–{{ session.end_time|time:"g:i A" }}</time>
+                    <span class="timeline-dot"></span>
+                    <div><span class="tag">Flexible routine</span><h3>{{ session.routine.title }}</h3><p>{{ session.duration_minutes }} minutes</p></div>
+                </article>
+            {% endfor %}
+            {% if not today_events and not today_sessions and not today_routines %}
+                <div class="empty-state compact"><span>◎</span><h3>Your day is open</h3><p>Add a class, practice, game, or study plan to get started.</p><a class="button button-ghost" href="{% url 'planner:event_create' %}">Add first commitment</a></div>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-header">
+            <div><span class="eyebrow">Next up</span><h2>Academic work</h2></div>
+            <a href="{% url 'planner:tasks' %}">View all →</a>
+        </div>
+        <div class="task-stack">
+            {% for task in upcoming_tasks %}
+                <article class="task-row {% if task.is_overdue %}overdue{% endif %}">
+                    <div class="priority priority-{{ task.priority }}"></div>
+                    <div class="task-main"><span>{{ task.course }} · {{ task.get_task_type_display }}</span><h3>{{ task.title }}</h3><p>{% if task.is_overdue %}Overdue{% else %}Due {{ task.due_date|date:"D, M j · g:i A" }}{% endif %}</p></div>
+                    <form method="post" action="{% url 'planner:task_toggle' task.pk %}">{% csrf_token %}<input type="hidden" name="next" value="planner:dashboard"><button class="check-button" aria-label="Mark complete">✓</button></form>
+                </article>
+            {% empty %}
+                <div class="empty-state compact"><span>✓</span><h3>Nothing due</h3><p>Add an assignment or exam to start planning.</p><a class="button button-ghost" href="{% url 'planner:task_create' %}">Add academic work</a></div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}
