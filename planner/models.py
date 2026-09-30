@@ -4,9 +4,17 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
+from django.conf import settings
 
 
 class Event(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name="%(class)ss",
+    )
+
     CLASS = "class"
     PRACTICE = "practice"
     GAME = "game"
@@ -93,6 +101,14 @@ class Event(models.Model):
 
 
 class AcademicTask(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name="%(class)ss",
+    )
+
+
     ASSIGNMENT = "assignment"
     EXAM = "exam"
     PROJECT = "project"
@@ -130,6 +146,12 @@ class AcademicTask(models.Model):
 
 
 class FlexibleRoutine(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name="%(class)ss",
+    )
     WEEKDAYS = Event.WEEKDAYS
 
     title = models.CharField(max_length=120)

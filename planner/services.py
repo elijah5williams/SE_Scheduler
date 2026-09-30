@@ -31,26 +31,26 @@ def merge_intervals(intervals):
     return merged
 
 
-def events_on(day):
-    possible = Event.objects.filter(date__lte=day)
+def events_on(day, user):
+    possible = Event.objects.filter(user=user, date__lte=day)
     return [event for event in possible if event.occurs_on(day)]
 
 
-def busy_intervals(day):
+def busy_intervals(day, user):
     intervals = []
     buffer = timedelta(minutes=BUFFER_MINUTES)
-    for event in events_on(day):
+    for event in events_on(day, user):
         intervals.append((event.starts_at(day) - buffer, event.ends_at(day) + buffer))
     # Include completed and newly generated sessions so two tasks never receive
     # overlapping study blocks during the same planning run.
-    for session in StudySession.objects.filter(date=day):
+    for session in StudySession.objects.filter(date=day, task__user=user):
         intervals.append((aware(day, session.start_time), aware(day, session.end_time)))
-    for session in RoutineSession.objects.filter(date=day):
+    for session in RoutineSession.objects.filter(date=day, routine__user=user):
         intervals.append((aware(day, session.start_time), aware(day, session.end_time)))
     return merge_intervals(intervals)
 
 
-def available_intervals(day, not_before=None, not_after=None):
+def available_intervals(day, user, not_before=None, not_after=None):
     window_start = aware(day, DAY_START)
     window_end = aware(day, DAY_END)
     if not_before:
@@ -62,7 +62,7 @@ def available_intervals(day, not_before=None, not_after=None):
 
     open_slots = []
     cursor = window_start
-    for busy_start, busy_end in busy_intervals(day):
+    for busy_start, busy_end in busy_intervals(day, user):
         busy_start = max(busy_start, window_start)
         busy_end = min(busy_end, window_end)
         if busy_end <= window_start or busy_start >= window_end:
@@ -80,7 +80,7 @@ def task_sort_key(task):
     return (task.due_date, priority_rank.get(task.priority, 1), -task.estimated_minutes)
 
 
-def schedule_routines(routines, today, planning_end, now):
+def schedule_routines(routines, today, planning_end, now, user):
     created_sessions = []
     unscheduled_routines = []
     day = today
@@ -97,7 +97,7 @@ def schedule_routines(routines, today, planning_end, now):
                 window_start = aware(day, routine.window_start)
                 earliest = max(earliest, window_start) if earliest else window_start
             latest = aware(day, routine.window_end) if routine.window_end else None
-            slots = available_intervals(day, earliest, latest)
+            slots = available_intervals(day, user, earliest, latest)
             scheduled = False
 
             for slot_start, slot_end in slots:
@@ -124,17 +124,21 @@ def schedule_routines(routines, today, planning_end, now):
 
 
 @transaction.atomic
-def generate_study_plan():
+def generate_study_plan(user):
     now = timezone.localtime()
     today = now.date()
-    tasks = list(AcademicTask.objects.filter(completed=False).order_by("due_date"))
-    routines = list(FlexibleRoutine.objects.filter(active=True))
+    tasks = list(AcademicTask.objects.filter(user=user, completed=False).order_by("due_date"))
+    routines = list(FlexibleRoutine.objects.filter(user=user, active=True))
     windowed_routines = [routine for routine in routines if routine.window_start and routine.window_end]
     open_routines = [routine for routine in routines if routine not in windowed_routines]
     planning_end = today + timedelta(days=13)
 
-    StudySession.objects.filter(generated=True, completed=False, date__gte=today).delete()
-    RoutineSession.objects.filter(generated=True, completed=False, date__gte=today).delete()
+    StudySession.objects.filter(
+        generated=True, completed=False, date__gte=today, task__user=user
+    ).delete()
+    RoutineSession.objects.filter(
+        generated=True, completed=False, date__gte=today, routine__user=user
+    ).delete()
 
     latest_due = max((task.due_date for task in tasks), default=None)
     horizon_end = min(latest_due.date(), planning_end) if latest_due else planning_end
@@ -147,7 +151,7 @@ def generate_study_plan():
 
     created_sessions = []
     created_routine_sessions, unscheduled_routines = schedule_routines(
-        windowed_routines, today, planning_end, now
+        windowed_routines, today, planning_end, now, user
     )
     unscheduled_tasks = []
 
@@ -165,7 +169,7 @@ def generate_study_plan():
         while day <= final_day and minutes_left > 0:
             earliest = now + timedelta(minutes=15) if day == today else None
             deadline = task.due_date if day == task.due_date.date() else None
-            slots = available_intervals(day, earliest, deadline)
+            slots = available_intervals(day, user, earliest, deadline)
 
             for slot_start, slot_end in slots:
                 available_minutes = int((slot_end - slot_start).total_seconds() // 60)
@@ -193,7 +197,7 @@ def generate_study_plan():
         if minutes_left > 0:
             unscheduled_tasks.append((task, minutes_left))
 
-    open_sessions, open_unscheduled = schedule_routines(open_routines, today, planning_end, now)
+    open_sessions, open_unscheduled = schedule_routines(open_routines, today, planning_end, now, user)
     created_routine_sessions.extend(open_sessions)
     unscheduled_routines.extend(open_unscheduled)
 

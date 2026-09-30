@@ -29,6 +29,16 @@
                     <span class="nav-icon">✦</span> Smart Planner
                 </a>
             </nav>
+        {% if user.is_authenticated %}
+        <div class="sidebar-user">
+             <span class="eyebrow">Signed in as</span>
+            <strong>{{ user.get_full_name|default:user.username }}</strong>
+            <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="button button-ghost">Log out</button>
+            </form>
+            </div>
+        {% endif %}
             <div class="sidebar-card">
                 <span class="eyebrow">Built for balance</span>
                 <strong>School. Sport. Success.</strong>

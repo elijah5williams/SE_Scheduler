@@ -1,0 +1,14 @@
+{% extends "registration/auth_base.html" %}
+{% block title %}Create account · Athlete Academic Assistant{% endblock %}
+{% block content %}
+  <h1>Create your account</h1>
+  <p class="lede">Set up a login to start planning your week.</p>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "registration/_fields.html" %}
+    <button type="submit">Create account</button>
+  </form>
+
+  <p class="switch">Already have an account? <a href="{% url 'login' %}">Log in</a></p>
+{% endblock %}
