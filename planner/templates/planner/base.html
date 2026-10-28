@@ -11,11 +11,22 @@
 <body>
     <div class="app-shell">
         <aside class="sidebar" id="sidebar">
-            <a class="brand" href="{% url 'planner:dashboard' %}">
-                <span class="brand-mark">A</span>
-                <span><strong>Athlete</strong><small>Academic Assistant</small></span>
+            <a class="brand" href="{% if user.profile.role == 'coach' %}{% url 'planner:coach_dashboard' %}{% else %}{% url 'planner:dashboard' %}{% endif %}">
+                <span class="brand-mark">{% if user.profile.role == 'coach' %}C{% elif user.profile.role == 'teacher' %}T{% else %}A{% endif %}</span>
+                <span>
+                    <strong>{% if user.profile.role == 'coach' %}Coach{% elif user.profile.role == 'teacher' %}Teacher{% else %}Athlete{% endif %}</strong>
+                    <small>Academic Assistant</small>
+                </span>
             </a>
             <nav class="main-nav" aria-label="Main navigation">
+                {% if user.profile.role == 'coach' %}
+                <a href="{% url 'planner:coach_dashboard' %}" class="{% if request.resolver_match.url_name == 'coach_dashboard' %}active{% endif %}">
+                    <span class="nav-icon">⌂</span> Coach Dashboard
+                </a>
+                <a href="{% url 'planner:team_create' %}" class="{% if request.resolver_match.url_name == 'team_create' %}active{% endif %}">
+                    <span class="nav-icon">✦</span> New Team
+                </a>
+                {% else %}
                 <a href="{% url 'planner:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                     <span class="nav-icon">⌂</span> Dashboard
                 </a>
@@ -28,6 +39,10 @@
                 <a href="{% url 'planner:study_planner' %}" class="{% if request.resolver_match.url_name == 'study_planner' %}active{% endif %}">
                     <span class="nav-icon">✦</span> Smart Planner
                 </a>
+                <a href="{% url 'planner:team_join' %}" class="{% if request.resolver_match.url_name == 'team_join' %}active{% endif %}">
+                    <span class="nav-icon">★</span> Join a Team
+                </a>
+                {% endif %}
             </nav>
         {% if user.is_authenticated %}
         <div class="sidebar-user">
@@ -40,9 +55,15 @@
             </div>
         {% endif %}
             <div class="sidebar-card">
+                {% if user.profile.role == 'coach' %}
+                <span class="eyebrow">Coach tools</span>
+                <strong>Lead the team.</strong>
+                <p>Send workouts, training and games to every athlete's schedule.</p>
+                {% else %}
                 <span class="eyebrow">Built for balance</span>
                 <strong>School. Sport. Success.</strong>
                 <p>Keep every commitment in one clear plan.</p>
+                {% endif %}
             </div>
         </aside>
 
@@ -51,8 +72,12 @@
                 <button class="menu-button" id="menuButton" aria-label="Open navigation">☰</button>
                 <div class="topbar-date">{% now "l, F j" %}</div>
                 <div class="quick-actions">
+                    {% if user.profile.role == 'coach' %}
+                    <a class="button button-primary" href="{% url 'planner:team_create' %}">+ New team</a>
+                    {% else %}
                     <a class="button button-ghost" href="{% url 'planner:event_create' %}">+ Commitment</a>
                     <a class="button button-primary" href="{% url 'planner:task_create' %}">+ Academic work</a>
+                    {% endif %}
                 </div>
             </header>
 

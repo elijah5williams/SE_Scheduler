@@ -1,0 +1,68 @@
+{% extends "planner/base.html" %}
+{% block content %}
+<style>
+  .coach-hero { background:#112240; color:#fff; border-radius:24px; padding:2.5rem; margin-bottom:1.5rem; }
+  .coach-hero .eyebrow { color:#e0b052; font-weight:700; letter-spacing:.15em; font-size:.8rem; text-transform:uppercase; margin:0 0 .5rem; }
+  .coach-hero h1 { margin:0 0 .5rem; font-size:2.5rem; }
+  .coach-hero p { margin:0 0 1.25rem; opacity:.85; }
+  .coach-btn { display:inline-block; padding:.65rem 1.1rem; border-radius:10px; font-weight:700; text-decoration:none; background:#fff; color:#112240; }
+  .coach-btn.green { background:#2f6f56; color:#fff; }
+  .team-card { background:#fff; border:1px solid #e6e2d8; border-radius:20px; padding:1.5rem; margin-bottom:1.25rem; }
+  .team-head { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap; }
+  .team-head h2 { margin:0; }
+  .code { background:#f3efe4; border-radius:8px; padding:.15rem .5rem; font-family:monospace; font-weight:700; }
+  .roster { margin:1rem 0; color:#5b676e; }
+  .assign-row { display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:.75rem 0; border-top:1px solid #eee9dc; }
+  .assign-type { font-size:.75rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#2f6f56; }
+  .assign-actions a { margin-left:.75rem; font-weight:600; }
+  .empty { color:#5b676e; }
+</style>
+
+<section class="coach-hero">
+  <p class="eyebrow">Coach command center</p>
+  <h1>Lead your team.</h1>
+  <p>Send workouts, training and games straight to your athletes' schedules.</p>
+  <a class="coach-btn" href="{% url 'planner:team_create' %}">+ New team</a>
+</section>
+
+{% for team in teams %}
+  <article class="team-card">
+    <div class="team-head">
+      <div>
+        <h2>{{ team.name }}</h2>
+        <p class="roster">
+          {{ team.athletes.count }} athlete{{ team.athletes.count|pluralize }} ·
+          Join code <span class="code">{{ team.join_code }}</span>
+        </p>
+      </div>
+      <a class="coach-btn green" href="{% url 'planner:assignment_create' team.pk %}">+ Assign</a>
+    </div>
+
+    {% if team.athletes.all %}
+      <p class="roster">Roster: {% for athlete in team.athletes.all %}{{ athlete.username }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+    {% else %}
+      <p class="roster">No athletes yet. Share the join code above.</p>
+    {% endif %}
+
+    {% for a in team.assignments.all %}
+      <div class="assign-row">
+        <div>
+          <span class="assign-type">{{ a.get_event_type_display }}</span><br>
+          <strong>{{ a.title }}</strong><br>
+          {{ a.date|date:"D, M j" }} · {{ a.start_time|time:"g:i A" }}–{{ a.end_time|time:"g:i A" }}
+          {% if a.location %}· {{ a.location }}{% endif %}
+          {% if a.repeat_weekly %}· repeats weekly{% endif %}
+        </div>
+        <div class="assign-actions">
+          <a href="{% url 'planner:assignment_update' a.pk %}">Edit</a>
+          <a href="{% url 'planner:assignment_delete' a.pk %}">Delete</a>
+        </div>
+      </div>
+    {% endfor %}
+  </article>
+{% empty %}
+  <article class="team-card">
+    <p class="empty">You don't have a team yet. Create one to get a join code for your athletes.</p>
+  </article>
+{% endfor %}
+{% endblock %}

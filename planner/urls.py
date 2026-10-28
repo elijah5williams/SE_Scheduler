@@ -23,4 +23,10 @@ urlpatterns = [
     path("planner/", views.study_planner, name="study_planner"),
     path("planner/session/<int:pk>/toggle/", views.session_toggle, name="session_toggle"),
     path("planner/routine-session/<int:pk>/toggle/", views.routine_session_toggle, name="routine_session_toggle"),
+    path("coach/", views.coach_dashboard, name="coach_dashboard"),
+    path("coach/teams/new/", views.team_create, name="team_create"),
+    path("coach/teams/<int:team_pk>/assign/", views.assignment_create, name="assignment_create"),
+    path("coach/assignments/<int:pk>/edit/", views.assignment_update, name="assignment_update"),
+    path("coach/assignments/<int:pk>/delete/", views.assignment_delete, name="assignment_delete"),
+    path("team/join/", views.team_join, name="team_join"),
 ]

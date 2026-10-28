@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime
 
 from django.core.exceptions import ValidationError
@@ -266,3 +267,124 @@ class RoutineSession(models.Model):
         start = datetime.combine(self.date, self.start_time)
         end = datetime.combine(self.date, self.end_time)
         return int((end - start).total_seconds() // 60)
+
+class Profile(models.Model):
+    STUDENT = "student"
+    TEACHER = "teacher"
+    COACH = "coach"
+    ROLE_CHOICES = [(STUDENT, "Student"), (TEACHER, "Teacher"), (COACH, "Coach")]
+
+    UNVERIFIED = "unverified"
+    PENDING = "pending"
+    VERIFIED = "verified"
+    REJECTED = "rejected"
+    VERIFICATION_CHOICES = [
+        (UNVERIFIED, "Unverified"),
+        (PENDING, "Pending review"),
+        (VERIFIED, "Verified"),
+        (REJECTED, "Rejected"),
+    ]
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile"
+    )
+
+    assignment = models.ForeignKey(
+        "Assignment", null=True, blank=True, on_delete=models.CASCADE, related_name="events"
+    )
+
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=STUDENT)  # what they picked
+    school_email = models.EmailField(unique=True, null=True, blank=True)
+    email_verified = models.BooleanField(default=False)
+    verification_status = models.CharField(
+        max_length=12, choices=VERIFICATION_CHOICES, default=UNVERIFIED
+    )
+    verified_role = models.CharField(max_length=10, choices=ROLE_CHOICES, blank=True)  # what the check confirmed
+    verified_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user} ({self.role}, {self.verification_status})"
+
+    @property
+    def is_verified_student(self):
+        return self.verification_status == self.VERIFIED and self.verified_role == self.STUDENT
+
+    @property
+    def is_verified_teacher(self):
+        return self.verification_status == self.VERIFIED and self.verified_role == self.TEACHER
+    @property
+    def is_verified_coach(self):
+        return self.verification_status == self.VERIFIED and self.verified_role == self.COACH
+
+def make_join_code():
+    return secrets.token_hex(3).upper()
+
+
+class Team(models.Model):
+    coach = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="coached_teams"
+    )
+    name = models.CharField(max_length=80)
+    join_code = models.CharField(max_length=8, unique=True, default=make_join_code)
+    athletes = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="teams")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Assignment(models.Model):
+    TYPES = [
+        (Event.WORKOUT, "Workout"),
+        (Event.PRACTICE, "Training"),
+        (Event.GAME, "Game"),
+    ]
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="assignments")
+    event_type = models.CharField(max_length=20, choices=TYPES, default=Event.PRACTICE)
+    title = models.CharField(max_length=120)
+    date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    location = models.CharField(max_length=120, blank=True)
+    notes = models.TextField(blank=True)
+    repeat_weekly = models.BooleanField(default=False)
+    repeat_until = models.DateField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["date", "start_time"]
+
+    def __str__(self):
+        return f"{self.title} ({self.team.name})"
+
+    def clean(self):
+        if self.end_time and self.start_time and self.end_time <= self.start_time:
+            raise ValidationError({"end_time": "End time must be later than start time."})
+        if self.repeat_weekly and self.repeat_until and self.repeat_until < self.date:
+            raise ValidationError({"repeat_until": "Repeat-until date cannot be before the first date."})
+
+    def _event_fields(self):
+        return {
+            "title": self.title,
+            "event_type": self.event_type,
+            "date": self.date,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "location": self.location,
+            "notes": self.notes,
+            "repeat_weekly": self.repeat_weekly,
+            "weekdays": "",
+            "repeat_until": self.repeat_until,
+        }
+
+    def push_to(self, athlete):
+        Event.objects.get_or_create(assignment=self, user=athlete, defaults=self._event_fields())
+
+    def push_to_team(self):
+        for athlete in self.team.athletes.all():
+            self.push_to(athlete)
+
+    def sync_events(self):
+        self.events.update(**self._event_fields())

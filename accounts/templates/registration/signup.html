@@ -1,12 +1,93 @@
 {% extends "registration/auth_base.html" %}
 {% block title %}Create account · Athlete Academic Assistant{% endblock %}
 {% block content %}
+  <style>
+    .role-field { border: 0; padding: 0; margin: 1.25rem 0; min-width: 0; }
+    .role-field legend { padding: 0; margin-bottom: .45rem; font-weight: 700; }
+    .role-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: .65rem; }
+    .role-option {
+      position: relative;
+      display: block;
+      margin: 0;
+      padding: .8rem .95rem;
+      border: 1px solid #aab4af;
+      border-radius: 10px;
+      font-weight: 400;
+      cursor: pointer;
+      transition: border-color .15s, background .15s, box-shadow .15s;
+    }
+    .role-option:hover { border-color: #7d8a84; }
+    .role-option input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .role-title { display: block; font-weight: 600; }
+    .role-desc { display: block; margin-top: .15rem; font-size: .8rem; color: #5b676e; line-height: 1.35; }
+    .role-option:has(input:checked) {
+      border-color: #386f4f;
+      background: #eaf3ed;
+      box-shadow: 0 0 0 1px #386f4f;
+    }
+    .role-option:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(56, 111, 79, .3); }
+    .field-hint { display: block; margin-top: .35rem; font-size: .85rem; color: #5b676e; }
+    .field-error { margin: .4rem 0 0; padding: 0; list-style: none; font-size: .88rem; color: #b3261e; }
+    @media (max-width: 560px) { .role-options { grid-template-columns: 1fr; } }
+  </style>
+
   <h1>Create your account</h1>
   <p class="lede">Set up a login to start planning your week.</p>
 
   <form method="post" novalidate>
     {% csrf_token %}
-    {% include "registration/_fields.html" %}
+
+    {% if form.non_field_errors %}
+      <ul class="field-error">{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    <div class="field">
+      <label for="{{ form.username.id_for_label }}">Username</label>
+      {{ form.username }}
+      <small class="field-hint">Letters, digits and @ . + - _ only.</small>
+      {% if form.username.errors %}<ul class="field-error">{% for error in form.username.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+
+    <div class="field">
+      <label for="{{ form.school_email.id_for_label }}">School email</label>
+      {{ form.school_email }}
+      <small class="field-hint">We'll send a link to this address to confirm it.</small>
+      {% if form.school_email.errors %}<ul class="field-error">{% for error in form.school_email.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+
+    <fieldset class="role-field">
+      <legend>I am a</legend>
+      <div class="role-options">
+        {% for radio in form.role %}
+          <label class="role-option" for="{{ radio.id_for_label }}">
+            {{ radio.tag }}
+            <span class="role-title">{{ radio.choice_label }}</span>
+            <span class="role-desc">{% if radio.data.value == "teacher" or radio.data.value == "coach" %}Reviewed before approval{% else %}Plan classes, work and study time{% endif %}</span>
+          </label>
+        {% endfor %}
+      </div>
+      {% if form.role.errors %}<ul class="field-error">{% for error in form.role.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+    </fieldset>
+
+    <div class="field">
+      <label for="{{ form.password1.id_for_label }}">Password</label>
+      {{ form.password1 }}
+      <small class="field-hint">Use at least 8 characters. Avoid common or all-numeric passwords.</small>
+      {% if form.password1.errors %}<ul class="field-error">{% for error in form.password1.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+
+    <div class="field">
+      <label for="{{ form.password2.id_for_label }}">Confirm password</label>
+      {{ form.password2 }}
+      {% if form.password2.errors %}<ul class="field-error">{% for error in form.password2.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+
     <button type="submit">Create account</button>
   </form>
 
