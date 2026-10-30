@@ -15,7 +15,7 @@
 <section class="panel routine-panel">
     <div class="panel-header">
         <div><span class="eyebrow">Fits wherever you are free</span><h2>Flexible routines</h2></div>
-        <a class="button button-primary button-small" href="{% url 'planner:routine_create' %}">+ Add routine</a>
+        <a class="button button-primary button-small routine-add-button" style="color: #fff !important;" href="{% url 'planner:routine_create' %}">+ Add routine</a>
     </div>
     <div class="routine-list">
         {% for routine in routines %}

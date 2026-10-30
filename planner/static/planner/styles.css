@@ -56,6 +56,25 @@ button { cursor: pointer; }
 .button-delete:hover { background: #fff2f1; }
 .button-small { padding: 8px 12px; font-size: 11px; }
 
+/* Keep panel actions prominent without changing unrelated links. */
+.panel-header > .routine-add-button,
+.panel-header > .schedule-add-button {
+    background: #176b45;
+    color: #fff;
+    border: 1px solid #0f5636;
+    box-shadow: 0 5px 12px rgba(23, 107, 69, .24);
+}
+.panel-header > .routine-add-button:hover,
+.panel-header > .schedule-add-button:hover {
+    background: #0f5636;
+    color: #fff;
+}
+.panel-header > .routine-add-button:focus-visible,
+.panel-header > .schedule-add-button:focus-visible {
+    outline: 3px solid rgba(231, 174, 72, .55);
+    outline-offset: 3px;
+}
+
 .messages { padding: 14px 4vw 0; }
 .message { max-width: 1420px; margin: 0 auto 8px; background: #e6f5ef; color: #145843; border: 1px solid #b7dfd0; padding: 12px 14px; border-radius: 10px; display: flex; justify-content: space-between; }
 .message.warning { background: #fff3d9; color: #785719; border-color: #efd89f; }
@@ -90,6 +109,16 @@ p { color: var(--muted); line-height: 1.6; }
 .panel-header { padding: 24px 25px 18px; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
 .panel-header h2 { margin-top: 5px; }
 .panel-header > a { color: var(--green); font-weight: 750; font-size: 13px; }
+.panel-header > a.button-primary {
+    background: #176b45;
+    color: #fff !important;
+    border: 1px solid #0f5636;
+    box-shadow: 0 5px 12px rgba(23, 107, 69, .24);
+}
+.panel-header > a.button-primary:hover {
+    background: #0f5636;
+    color: #fff !important;
+}
 .timeline { padding: 2px 25px 24px; }
 .timeline-item { display: grid; grid-template-columns: 78px 18px 1fr; gap: 10px; min-height: 86px; position: relative; }
 .timeline-item time { color: var(--muted); font-size: 12px; padding-top: 5px; font-weight: 700; }
