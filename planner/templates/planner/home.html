@@ -1,107 +1,123 @@
-{% extends "planner/base.html" %}
-{% load static %}
-{% block title %}Home · Athlete Academic Assistant{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'planner/home.css' %}?v=2026-11-08">{% endblock %}
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Home · Athlete Academic Assistant</title>
+  <link rel="icon" href="https://assumptiongreyhounds.com/images/logos/site/site.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,700;6..96,800&family=Pinyon+Script&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'planner/topnav.css' %}?v=2026-11-08">
+  <link rel="stylesheet" href="{% static 'planner/home.css' %}?v=2026-11-08">
+</head>
+<body>
+  {% with profile=user.profile %}
+  {% include "planner/_topnav.html" %}
 
-{% block content %}
-{% with profile=user.profile %}
-<section class="home-hero">
-  {% if photos %}
-    {% for photo in photos %}
-      <img class="ph{% if forloop.first %} on{% endif %}" src="{{ photo.image_url }}" alt="{{ photo.title }}" {% if not forloop.first %}loading="lazy"{% endif %} onerror="this.remove()">
-    {% endfor %}
-  {% endif %}
-  <div class="home-shade" aria-hidden="true"></div>
+  <main class="stage">
+    <h1 class="sr-only">School. Sport. Success.</h1>
 
-  <div class="home-intro">
-    <span class="eyebrow">Welcome back, {{ user.first_name|default:user.username }}</span>
-    <h1>School. Sport.<br>Success.</h1>
-    <p>Every class, practice and game in one plan, built around life as a Greyhound.</p>
-  </div>
+    <!-- Big editorial headline, layered around the live photo -->
+    <div class="word w1" aria-hidden="true">School.</div>
+    <div class="word w2" aria-hidden="true">Sport.</div>
+    <div class="word w3" aria-hidden="true">Success</div>
+    <div class="script" aria-hidden="true">Built for Greyhounds</div>
 
-  {% if photos %}
-    <div class="home-news">
-      <span class="news-tag">Latest from Greyhound athletics</span>
-      {% for photo in photos %}<a class="cap{% if forloop.first %} on{% endif %}" href="{{ photo.link }}" target="_blank" rel="noopener">{{ photo.title }}</a>{% endfor %}
-      <span class="dots">{% for photo in photos %}<button type="button" {% if forloop.first %}class="on" {% endif %}aria-label="Photo {{ forloop.counter }}"></button>{% endfor %}</span>
-    </div>
-  {% endif %}
-</section>
+    <figure class="photo-frame">
+      {% if photos %}
+        {% for photo in photos %}
+          <img class="ph{% if forloop.first %} on{% endif %}" src="{{ photo.image_url }}" alt="{{ photo.title }}" {% if not forloop.first %}loading="lazy"{% endif %} onerror="this.remove()">
+        {% endfor %}
+        <figcaption>
+          {% for photo in photos %}<a class="cap{% if forloop.first %} on{% endif %}" href="{{ photo.link }}" target="_blank" rel="noopener">{{ photo.title }}</a>{% endfor %}
+          <span class="dots">{% for photo in photos %}<button type="button" {% if forloop.first %}class="on" {% endif %}aria-label="Photo {{ forloop.counter }}"></button>{% endfor %}</span>
+        </figcaption>
+      {% else %}
+        <div class="ph-fallback"><span>A</span></div>
+      {% endif %}
+    </figure>
 
-<section class="home-row">
-  <a class="panel home-next" href="{% if is_coach %}{% url 'planner:coach_schedule' %}{% else %}{% url 'planner:schedule' %}{% endif %}">
-    <span class="eyebrow">{% if next_game %}Next {{ next_hub.event_word }} · {{ next_hub.sport }}{% else %}Your schedule{% endif %}</span>
-    {% if next_game %}
-      <div class="home-match">
-        <span class="home-logo"><img src="https://assumptiongreyhounds.com/images/logos/site/site.png" alt="" onerror="this.remove()">A</span>
-        <span class="home-vs">{{ next_game.matchup_word }}</span>
-        <span class="home-logo">{% if next_game.opponent_logo %}<img src="{{ next_game.opponent_logo }}" alt="" onerror="this.remove()">{% endif %}{{ next_game.opponent|slice:":1" }}</span>
-        <span class="home-match-text">
-          <strong>{{ next_game.opponent }}</strong>
-          <small>{{ next_game.date|date:"l, M j" }}{% if not next_game.time_tba %} · {{ next_game.start_time|time:"g:i A" }}{% else %} · Time TBA{% endif %}{% if next_game.location %} · {{ next_game.location }}{% endif %}</small>
-        </span>
-      </div>
-    {% else %}
-      <h2>No games coming up</h2>
-      <p class="muted">See your classes, practices and study time for the week.</p>
-    {% endif %}
-    <span class="home-go">View schedule &rarr;</span>
-  </a>
+    <aside class="blurb">
+      <img class="blurb-mark" src="https://assumptiongreyhounds.com/images/logos/site/site.png" alt="" onerror="this.remove()">
+      <p>Every class, practice and game in one plan. Your schedule, your team and your study time, built around life as a Greyhound.</p>
+    </aside>
 
-  {% if next_hub and next_hub.record %}
-  <div class="panel home-record">
-    <span class="eyebrow">{{ next_hub.sport }} season</span>
-    <dl>
-      {% for label, value in next_hub.record|slice:":4" %}<div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>{% endfor %}
+    <dl class="facts">
+      {% if next_game %}
+        <div><dt>Next {{ next_hub.event_word }}</dt><dd>{{ next_game.date|date:"D, M j" }}<br>{% if next_game.time_tba %}Time TBA{% else %}{{ next_game.start_time|time:"g:i A" }}{% endif %}</dd></div>
+      {% endif %}
+      {% if next_hub and next_hub.record %}
+        <div><dt>{{ next_hub.sport }}</dt><dd>{{ next_hub.record.0.1 }} overall{% if next_hub.record|length > 4 %}<br>Streak {{ next_hub.record.4.1 }}{% endif %}</dd></div>
+      {% endif %}
     </dl>
-  </div>
-  {% endif %}
-</section>
 
-{% if ticker %}
-<section class="panel home-ticker" aria-label="Latest Greyhound results">
-  <span class="ticker-label">Live scores</span>
-  <div class="ticker-track"><div class="ticker-move">
-    {% for pass in "ab" %}{% for g in ticker %}
-      <span class="tick"{% if pass == "b" %} aria-hidden="true"{% endif %}>
-        {% if g.outcome %}<b class="o-{{ g.outcome }}">{{ g.outcome }} {{ g.score }}</b>{% else %}<b>{{ g.result }}</b>{% endif %}
-        {{ g.team.name|cut:"Assumption " }} {{ g.matchup_word }} {{ g.opponent }}
+    <a class="ticket" href="{% if is_coach %}{% url 'planner:coach_schedule' %}{% else %}{% url 'planner:schedule' %}{% endif %}">
+      <span class="ticket-top">{% if next_game %}Next {{ next_hub.event_word }}{% else %}My schedule{% endif %}</span>
+      <span class="ticket-frame">
+        {% if next_game %}
+          <span class="ticket-logo">{% if next_game.opponent_logo %}<img src="{{ next_game.opponent_logo }}" alt="" onerror="this.remove()">{% endif %}<b>{{ next_game.opponent|slice:":1" }}</b></span>
+          <span class="ticket-text">
+            <strong>{{ next_game.matchup_word }} {{ next_game.opponent }}</strong>
+            <small>{{ next_hub.sport }} · {{ next_game.date|date:"M j" }}{% if not next_game.time_tba %} · {{ next_game.start_time|time:"g:i A" }}{% endif %}</small>
+          </span>
+        {% else %}
+          <span class="ticket-text"><strong>See your week</strong><small>Classes, practice and study time</small></span>
+        {% endif %}
       </span>
-    {% endfor %}{% endfor %}
-  </div></div>
-</section>
-{% endif %}
+      <span class="ticket-go">View schedule &rarr;</span>
+    </a>
+  </main>
 
-<section class="home-cards" aria-label="Go to">
-  {% if is_coach %}
-    <a class="panel home-card" href="{% url 'planner:coach_dashboard' %}"><span>⌂</span><strong>Dashboard</strong><small>Your team at a glance</small></a>
-    <a class="panel home-card" href="{% url 'planner:coach_schedule' %}"><span>□</span><strong>Team schedule</strong><small>Games, scores and practices</small></a>
-    <a class="panel home-card" href="{% url 'planner:coach_roster' %}"><span>☰</span><strong>Roster</strong><small>Every athlete on your team</small></a>
-    <a class="panel home-card" href="{% url 'planner:coach_staff' %}"><span>★</span><strong>Coaching staff</strong><small>Coaches and their roles</small></a>
-  {% else %}
-    <a class="panel home-card" href="{% url 'planner:dashboard' %}"><span>⌂</span><strong>Dashboard</strong><small>Today, scores and what's due</small></a>
-    <a class="panel home-card" href="{% url 'planner:schedule' %}"><span>□</span><strong>My schedule</strong><small>Your next seven days</small></a>
-    <a class="panel home-card" href="{% url 'planner:tasks' %}"><span>✓</span><strong>Academic work</strong><small>Assignments and exams</small></a>
-    <a class="panel home-card" href="{% url 'planner:study_planner' %}"><span>✦</span><strong>Smart planner</strong><small>Study time that fits</small></a>
+  {% if ticker %}
+  <section class="ticker" aria-label="Latest Greyhound results">
+    <div class="ticker-label">Live scores</div>
+    <div class="ticker-track">
+      <div class="ticker-move">
+        {% for pass in "ab" %}
+          {% for g in ticker %}
+            <span class="tick"{% if pass == "b" %} aria-hidden="true"{% endif %}>
+              {% if g.outcome %}<b class="o-{{ g.outcome }}">{{ g.outcome }} {{ g.score }}</b>{% else %}<b>{{ g.result }}</b>{% endif %}
+              {{ g.team.name|cut:"Assumption " }} {{ g.matchup_word }} {{ g.opponent }}
+            </span>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+  </section>
   {% endif %}
-</section>
-{% endwith %}
 
-<script>
-  (function () {
-    var photos = document.querySelectorAll(".home-hero .ph"), caps = document.querySelectorAll(".home-news .cap"), dots = document.querySelectorAll(".home-news .dots button");
-    if (photos.length < 2) return;
-    var i = 0, timer;
-    function show(n) {
-      [photos, caps, dots].forEach(function (list) { if (list[i]) list[i].classList.remove("on"); if (list[n]) list[n].classList.add("on"); });
-      i = n;
-    }
-    function start() {
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      timer = setInterval(function () { show((i + 1) % photos.length); }, 6500);
-    }
-    dots.forEach(function (d, n) { d.addEventListener("click", function () { clearInterval(timer); show(n); start(); }); });
-    start();
-  })();
-</script>
-{% endblock %}
+  <section class="cards" aria-label="Go to">
+    {% if is_coach %}
+      <a class="card" href="{% url 'planner:coach_dashboard' %}"><span>01</span><strong>Dashboard</strong><small>Your team at a glance</small></a>
+      <a class="card" href="{% url 'planner:coach_schedule' %}"><span>02</span><strong>Team schedule</strong><small>Games, scores and practices</small></a>
+      <a class="card" href="{% url 'planner:coach_roster' %}"><span>03</span><strong>Roster</strong><small>Every athlete on your team</small></a>
+      <a class="card" href="{% url 'planner:coach_staff' %}"><span>04</span><strong>Coaching staff</strong><small>Coaches and their roles</small></a>
+    {% else %}
+      <a class="card" href="{% url 'planner:dashboard' %}"><span>01</span><strong>Dashboard</strong><small>Today, scores and what's due</small></a>
+      <a class="card" href="{% url 'planner:schedule' %}"><span>02</span><strong>My schedule</strong><small>Your next seven days</small></a>
+      <a class="card" href="{% url 'planner:tasks' %}"><span>03</span><strong>Academic work</strong><small>Assignments and exams</small></a>
+      <a class="card" href="{% url 'planner:study_planner' %}"><span>04</span><strong>Smart planner</strong><small>Study time that fits</small></a>
+    {% endif %}
+  </section>
+  {% endwith %}
+
+  <script>
+    (function () {
+      var photos = document.querySelectorAll(".ph"), caps = document.querySelectorAll(".cap"), dots = document.querySelectorAll(".dots button");
+      if (photos.length < 2) return;
+      var i = 0, timer;
+      function show(n) {
+        [photos, caps, dots].forEach(function (list) { if (list[i]) list[i].classList.remove("on"); if (list[n]) list[n].classList.add("on"); });
+        i = n;
+      }
+      function start() {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        timer = setInterval(function () { show((i + 1) % photos.length); }, 6500);
+      }
+      dots.forEach(function (d, n) { d.addEventListener("click", function () { clearInterval(timer); show(n); start(); }); });
+      start();
+    })();
+  </script>
+</body>
+</html>

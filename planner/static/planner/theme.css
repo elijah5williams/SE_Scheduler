@@ -162,3 +162,28 @@ body::before {
 .gameday-text > span { display: block; color: #cfe0f5; font-size: 13px; }
 .gameday-when { flex: none; padding: 6px 12px; border-radius: 999px; background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .28); font-weight: 800; font-size: 13px; }
 .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff5a4f; display: inline-block; animation: gh-pulse 1.6s infinite; }
+
+/* ---- Top-menu layout (same as Home): no sidebar, content centered under the menu ---- */
+.app-shell.app-top { display: block; max-width: 1360px; margin: 0 auto; padding: 0 32px; min-height: auto; }
+.app-top .main-content { min-width: 0; }
+.app-top .topbar {
+    position: static; height: auto; padding: 4px 0 18px;
+    background: none; border: 0; backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+.app-top .topbar-date { font: 600 13px Inter, system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: #3e4c60; }
+.app-top .page-content { padding: 6px 0 70px; max-width: none; }
+.app-top .messages { padding: 0 0 6px; }
+.nav { position: relative; z-index: 20; }
+
+/* Editorial headlines, like Home */
+.app-top h1, .app-top .hero h1, .app-top .planner-hero h1, .app-top .coach-hero h1, .app-top .page-heading h1, .app-top .coach-page-head h1 {
+    font-family: "Bodoni Moda", Didot, Georgia, serif; font-weight: 800; letter-spacing: -.02em;
+}
+.app-top .page-heading h1, .app-top .coach-page-head h1 { color: #0a2240; font-size: clamp(42px, 5vw, 72px); line-height: .95; }
+.app-top h2 { font-family: "Bodoni Moda", Didot, Georgia, serif; font-weight: 700; }
+
+@media (max-width: 980px) {
+    .app-shell.app-top { padding: 0 16px; }
+    .app-top .topbar { flex-wrap: wrap; gap: 10px; }
+    .app-top .quick-actions { flex-wrap: wrap; }
+}

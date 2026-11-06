@@ -1,0 +1,28 @@
+{% with profile=user.profile name=request.resolver_match.url_name %}
+<header class="nav">
+  <a class="nav-brand" href="{% url 'planner:home' %}" aria-label="Home">
+    <span class="nav-logo"><img src="https://assumptiongreyhounds.com/images/logos/site/site.png" alt="" onerror="this.remove()">A</span>
+    <span class="nav-word">Greyhounds</span>
+  </a>
+  <nav class="nav-links" aria-label="Main">
+    <a {% if name == 'home' %}class="on" {% endif %}href="{% url 'planner:home' %}">Home</a>
+    {% if profile.role == 'coach' %}
+      <a {% if name == 'coach_dashboard' %}class="on" {% endif %}href="{% url 'planner:coach_dashboard' %}">Dashboard</a>
+      <a {% if name == 'coach_schedule' or name == 'assignment_create' or name == 'assignment_update' %}class="on" {% endif %}href="{% url 'planner:coach_schedule' %}">Team Schedule</a>
+      <a {% if name == 'coach_roster' %}class="on" {% endif %}href="{% url 'planner:coach_roster' %}">Roster</a>
+      <a {% if name == 'coach_staff' %}class="on" {% endif %}href="{% url 'planner:coach_staff' %}">Coaching Staff</a>
+      <a {% if name == 'team_create' %}class="on" {% endif %}href="{% url 'planner:team_create' %}">New Team</a>
+    {% else %}
+      <a {% if name == 'dashboard' %}class="on" {% endif %}href="{% url 'planner:dashboard' %}">Dashboard</a>
+      <a {% if name == 'schedule' or name == 'event_create' or name == 'event_update' %}class="on" {% endif %}href="{% url 'planner:schedule' %}">My Schedule</a>
+      <a {% if name == 'tasks' or name == 'task_create' or name == 'task_update' %}class="on" {% endif %}href="{% url 'planner:tasks' %}">Academic Work</a>
+      <a {% if name == 'study_planner' or name == 'routine_create' or name == 'routine_update' %}class="on" {% endif %}href="{% url 'planner:study_planner' %}">Smart Planner</a>
+      <a {% if name == 'team_join' %}class="on" {% endif %}href="{% url 'planner:team_join' %}">Join a Team</a>
+    {% endif %}
+  </nav>
+  <div class="nav-user">
+    <span class="nav-name">{{ user.get_full_name|default:user.username }}<small>{{ profile.display_title }}</small></span>
+    <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Log out</button></form>
+  </div>
+</header>
+{% endwith %}

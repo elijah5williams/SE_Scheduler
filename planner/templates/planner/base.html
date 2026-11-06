@@ -10,83 +10,17 @@
     <link rel="icon" href="https://assumptiongreyhounds.com/images/logos/site/site.png">
     <link rel="stylesheet" href="{% static 'planner/styles.css' %}?v=2026-11-06d">
     <link rel="stylesheet" href="{% static 'planner/coach.css' %}?v=2026-11-07b">
-    <link rel="stylesheet" href="{% static 'planner/theme.css' %}?v=2026-11-07b">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,700;6..96,800&family=Pinyon+Script&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'planner/theme.css' %}?v=2026-11-08">
+    <link rel="stylesheet" href="{% static 'planner/topnav.css' %}?v=2026-11-08">
 </head>
 <body>
-    <div class="app-shell">
-        <aside class="sidebar" id="sidebar">
-            <a class="brand" href="{% if user.profile.role == 'coach' %}{% url 'planner:coach_dashboard' %}{% else %}{% url 'planner:dashboard' %}{% endif %}">
-                <span class="brand-mark brand-logo"><img src="https://assumptiongreyhounds.com/images/logos/site/site.png" alt="" onerror="this.remove()">{% if user.profile.role == 'coach' %}C{% elif user.profile.role == 'teacher' %}T{% else %}A{% endif %}</span>
-                {% with profile=user.profile %}
-                <span>
-                    <strong>{{ profile.display_title }}</strong>
-                    <small>{{ profile.display_team|default:"Academic Assistant" }}</small>
-                </span>
-                {% endwith %}
-            </a>
-            <nav class="main-nav" aria-label="Main navigation">
-                {% if user.profile.role == 'coach' %}
-                <a href="{% url 'planner:home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}"><span class="nav-icon">◎</span> Home</a>
-                <a href="{% url 'planner:coach_dashboard' %}" class="{% if request.resolver_match.url_name == 'coach_dashboard' %}active{% endif %}">
-                    <span class="nav-icon">⌂</span> Coach Dashboard
-                </a>
-                <a href="{% url 'planner:coach_schedule' %}" class="{% if request.resolver_match.url_name == 'coach_schedule' %}active{% endif %}">
-                    <span class="nav-icon">□</span> Team Schedule
-                </a>
-                <a href="{% url 'planner:coach_roster' %}" class="{% if request.resolver_match.url_name == 'coach_roster' %}active{% endif %}">
-                    <span class="nav-icon">☰</span> Roster
-                </a>
-                <a href="{% url 'planner:coach_staff' %}" class="{% if request.resolver_match.url_name == 'coach_staff' %}active{% endif %}">
-                    <span class="nav-icon">★</span> Coaching Staff
-                </a>
-                <a href="{% url 'planner:team_create' %}" class="{% if request.resolver_match.url_name == 'team_create' %}active{% endif %}">
-                    <span class="nav-icon">✦</span> New Team
-                </a>
-                {% else %}
-                <a href="{% url 'planner:home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}"><span class="nav-icon">◎</span> Home</a>
-                <a href="{% url 'planner:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                    <span class="nav-icon">⌂</span> Dashboard
-                </a>
-                <a href="{% url 'planner:schedule' %}" class="{% if request.resolver_match.url_name == 'schedule' %}active{% endif %}">
-                    <span class="nav-icon">□</span> My Schedule
-                </a>
-                <a href="{% url 'planner:tasks' %}" class="{% if request.resolver_match.url_name == 'tasks' %}active{% endif %}">
-                    <span class="nav-icon">✓</span> Academic Work
-                </a>
-                <a href="{% url 'planner:study_planner' %}" class="{% if request.resolver_match.url_name == 'study_planner' %}active{% endif %}">
-                    <span class="nav-icon">✦</span> Smart Planner
-                </a>
-                <a href="{% url 'planner:team_join' %}" class="{% if request.resolver_match.url_name == 'team_join' %}active{% endif %}">
-                    <span class="nav-icon">★</span> Join a Team
-                </a>
-                {% endif %}
-            </nav>
-        {% if user.is_authenticated %}
-        <div class="sidebar-user">
-             <span class="eyebrow">Signed in as</span>
-            <strong>{{ user.get_full_name|default:user.username }}</strong>
-            <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit" class="button button-ghost">Log out</button>
-            </form>
-            </div>
-        {% endif %}
-            <div class="sidebar-card">
-                {% if user.profile.role == 'coach' %}
-                <span class="eyebrow">Coach tools</span>
-                <strong>Lead the team.</strong>
-                <p>Send workouts, training and games to every athlete's schedule.</p>
-                {% else %}
-                <span class="eyebrow">Built for balance</span>
-                <strong>School. Sport. Success.</strong>
-                <p>Keep every commitment in one clear plan.</p>
-                {% endif %}
-            </div>
-        </aside>
-
+    {% include "planner/_topnav.html" %}
+    <div class="app-shell app-top">
         <main class="main-content">
             <header class="topbar">
-                <button class="menu-button" id="menuButton" aria-label="Open navigation">☰</button>
                 <div class="topbar-date">{% now "l, F j" %}</div>
                 <div class="quick-actions">
                     {% if user.profile.role == 'coach' %}
@@ -112,7 +46,6 @@
             </div>
         </main>
     </div>
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <script src="{% static 'planner/app.js' %}?v=2026-11-06d"></script>
 </body>
 </html>
