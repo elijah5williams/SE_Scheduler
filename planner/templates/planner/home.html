@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,700;6..96,800&family=Pinyon+Script&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'planner/topnav.css' %}?v=2026-11-08">
-  <link rel="stylesheet" href="{% static 'planner/home.css' %}?v=2026-11-08">
+  <link rel="stylesheet" href="{% static 'planner/home.css' %}?v=2026-11-08b">
 </head>
 <body>
   {% with profile=user.profile %}
@@ -46,6 +46,9 @@
     <dl class="facts">
       {% if next_game %}
         <div><dt>Next {{ next_hub.event_word }}</dt><dd>{{ next_game.date|date:"D, M j" }}<br>{% if next_game.time_tba %}Time TBA{% else %}{{ next_game.start_time|time:"g:i A" }}{% endif %}</dd></div>
+      {% endif %}
+      {% if weather %}
+        <div><dt>Forecast</dt><dd>{{ weather.icon }} {{ weather.temp }}°F<br>{{ weather.text }}{% if weather.rain >= 20 %} · {{ weather.rain }}%{% endif %}</dd></div>
       {% endif %}
       {% if next_hub and next_hub.record %}
         <div><dt>{{ next_hub.sport }}</dt><dd>{{ next_hub.record.0.1 }} overall{% if next_hub.record|length > 4 %}<br>Streak {{ next_hub.record.4.1 }}{% endif %}</dd></div>
@@ -87,6 +90,36 @@
   </section>
   {% endif %}
 
+  {% if bios %}
+  <section class="spotlight" aria-label="Meet the Greyhounds">
+    <div class="spot-head">
+      <span class="spot-kicker">Player spotlight</span>
+      <h2>Meet the Greyhounds</h2>
+    </div>
+    <div class="spot-stage">
+      {% for b in bios %}
+        <a class="spot{% if forloop.first %} on{% endif %}" href="{{ b.bio_url|default:'#' }}" target="_blank" rel="noopener">
+          <span class="spot-photo"><img src="{{ b.photo_url }}" alt="{{ b.user.get_full_name }}" loading="lazy" onerror="this.closest('.spot').remove()">{% if b.number %}<i>#{{ b.number }}</i>{% endif %}</span>
+          <span class="spot-info">
+            <span class="spot-team">{{ b.team.name|cut:"Assumption " }}</span>
+            <strong>{{ b.user.first_name }}<br>{{ b.user.last_name }}</strong>
+            <dl>
+              {% if b.position %}<div><dt>Position</dt><dd>{{ b.position }}</dd></div>{% endif %}
+              {% if b.year %}<div><dt>Year</dt><dd>{{ b.year }}</dd></div>{% endif %}
+              {% if b.height %}<div><dt>Height</dt><dd>{{ b.height }}</dd></div>{% endif %}
+              {% if b.hometown %}<div><dt>Hometown</dt><dd>{{ b.hometown }}</dd></div>{% endif %}
+            </dl>
+            <span class="spot-go">Full bio &rarr;</span>
+          </span>
+        </a>
+      {% endfor %}
+    </div>
+    <div class="spot-thumbs" role="tablist" aria-label="Players">
+      {% for b in bios %}<button type="button" {% if forloop.first %}class="on" {% endif %}aria-label="{{ b.user.get_full_name }}"><img src="{{ b.photo_url }}" alt="" loading="lazy"></button>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
   <section class="cards" aria-label="Go to">
     {% if is_coach %}
       <a class="card" href="{% url 'planner:coach_dashboard' %}"><span>01</span><strong>Dashboard</strong><small>Your team at a glance</small></a>
@@ -102,6 +135,17 @@
   </section>
   {% endwith %}
 
+  <script>
+    (function () {
+      var spots = document.querySelectorAll(".spot"), thumbs = document.querySelectorAll(".spot-thumbs button");
+      if (spots.length < 2) return;
+      var i = 0, timer;
+      function show(n) { spots[i].classList.remove("on"); thumbs[i] && thumbs[i].classList.remove("on"); i = n; spots[i].classList.add("on"); thumbs[i] && thumbs[i].classList.add("on"); }
+      function start() { if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) timer = setInterval(function () { show((i + 1) % spots.length); }, 5000); }
+      thumbs.forEach(function (t, n) { t.addEventListener("click", function () { clearInterval(timer); show(n); start(); }); });
+      start();
+    })();
+  </script>
   <script>
     (function () {
       var photos = document.querySelectorAll(".ph"), caps = document.querySelectorAll(".cap"), dots = document.querySelectorAll(".dots button");

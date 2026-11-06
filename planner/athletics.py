@@ -8,7 +8,7 @@ import re
 
 from django.db import transaction
 
-from .models import Profile, Team
+from .models import AthleteBio, Profile, Team
 from .roster import import_person, school_email, team_name_for
 from .schedule_sync import ScheduleError, fetch, sync_team
 
@@ -73,6 +73,37 @@ def parse_roster(page):
     return players, coaches
 
 
+def _field(card, cls):
+    m = re.search(rf'class="[^"]*\b{cls}\b[^"]*"[^>]*>(.*?)</(?:span|div)>', card, re.S)
+    return _text(m.group(1)) if m else ""
+
+
+def parse_player_cards(page):
+    """{(first, last): {photo_url, number, position, height, year, hometown, bio_url}} from roster cards."""
+    cards = {}
+    for card in re.split(r'<li class="sidearm-list-card-item"', page)[1:]:
+        first, last = _field(card, "sidearm-roster-player-first-name"), _field(card, "sidearm-roster-player-last-name")
+        if not first:
+            continue
+        photo = re.search(r"background-image:url\('([^']+)'\)", card) or re.search(r'data-src="([^"]+\.(?:jpe?g|png)[^"]*)"', card)
+        link = re.search(r'href="(/sports/[^"]+/roster/[^"]+)"', card)
+        photo_url = html.unescape(photo.group(1)) if photo else ""
+        if photo_url.startswith("/"):
+            photo_url = SITE + photo_url
+        if "placeholder" in photo_url.lower() or "/logos/" in photo_url:
+            photo_url = ""
+        cards[(first, last)] = {
+            "photo_url": photo_url,
+            "number": _field(card, "sidearm-roster-player-jersey"),
+            "position": _field(card, "sidearm-roster-player-position-short") or _field(card, "sidearm-roster-player-position"),
+            "height": _field(card, "sidearm-roster-player-height"),
+            "year": _field(card, "sidearm-roster-player-academic-year"),
+            "hometown": _field(card, "sidearm-roster-player-hometown"),
+            "bio_url": SITE + link.group(1) if link else "",
+        }
+    return cards
+
+
 @transaction.atomic
 def sync_sport(slug, hashed_password=None, with_schedule=True):
     """Create/update one sport's team, people and schedule. Returns a summary dict."""
@@ -80,6 +111,7 @@ def sync_sport(slug, hashed_password=None, with_schedule=True):
     summary = {"sport": label, "athletes": 0, "coaches": 0, "games": 0, "skipped": "", "users_created": 0}
     page = fetch(f"{SITE}/sports/{slug}/roster")
     players, coaches = parse_roster(page) if "sidearm-roster" in page else ([], [])  # some clubs link elsewhere
+    cards = parse_player_cards(page)
     if not players and not coaches:
         summary["skipped"] = "no roster posted"
         return summary
@@ -98,7 +130,10 @@ def sync_sport(slug, hashed_password=None, with_schedule=True):
     for row in rows:
         if not row["email"].split("@")[0].strip("."):
             continue  # name with no usable letters
-        _, team = import_person(row, stats, hashed_password=hashed_password)
+        user, team = import_person(row, stats, hashed_password=hashed_password)
+        card = cards.get((row["first_name"], row["last_name"]))
+        if card and row["role"] == Profile.STUDENT:
+            AthleteBio.objects.update_or_create(team=team, user=user, defaults=card)
     summary.update(athletes=len(players), coaches=len(coaches), users_created=stats["users_created"])
 
     team = team or Team.objects.get(name=team_name_for(label))

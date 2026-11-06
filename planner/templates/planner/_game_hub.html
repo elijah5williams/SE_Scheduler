@@ -30,6 +30,7 @@ Expects `hub` from planner.schedule_sync.game_hub().
           </div>
         </div>
         {% if game.location %}<p class="gh-where">{{ game.location }}</p>{% endif %}
+        {% if hub.weather %}<p class="gh-where gh-weather">{% with weather=hub.weather %}{% include "planner/_weather.html" %}{% endwith %}</p>{% endif %}
         {% if live %}
           <p class="gh-live-note">The final score shows here once it's posted.</p>
         {% elif game.time_tba %}

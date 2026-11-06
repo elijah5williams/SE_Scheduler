@@ -16,4 +16,5 @@
     <p class="empty">You don't have a team yet. <a href="{% url 'planner:team_create' %}">Create one</a> to get started.</p>
   </article>
 {% endfor %}
+{% if section == "schedule" %}{% include "planner/_calendar_card.html" %}{% endif %}
 {% endblock %}

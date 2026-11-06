@@ -187,3 +187,17 @@ body::before {
     .app-top .topbar { flex-wrap: wrap; gap: 10px; }
     .app-top .quick-actions { flex-wrap: wrap; }
 }
+
+/* Calendar subscribe card */
+.cal-card { display: flex; gap: 22px; align-items: flex-start; margin: 22px 0; padding: 24px 26px; }
+.cal-icon { flex: none; width: 74px; border-radius: 16px; overflow: hidden; background: #fff; box-shadow: 0 8px 20px rgba(31, 79, 128, .14); text-align: center; }
+.cal-month { display: block; padding: 4px 0; background: #d64236; color: #fff; font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.cal-day { display: block; padding: 6px 0 8px; font: 800 32px/1 "Bodoni Moda", Georgia, serif; color: #121a2b; }
+.cal-text h2 { margin: 4px 0 6px; }
+.cal-text p { margin: 0 0 16px; color: var(--muted); max-width: 640px; }
+.cal-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.cal-actions button { font: inherit; cursor: pointer; }
+.cal-reset { margin-top: 14px; font-size: 12px; color: var(--muted); }
+.cal-reset button { padding: 0; border: 0; background: none; color: var(--navy-2); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.gh-weather .wx { display: inline-block; padding: 5px 12px; border-radius: 999px; background: rgba(255, 255, 255, .12); color: #fff; font-weight: 600; }
+@media (max-width: 640px) { .cal-card { flex-direction: column; } }

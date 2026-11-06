@@ -302,6 +302,7 @@ class Profile(models.Model):
     )
     verified_role = models.CharField(max_length=10, choices=ROLE_CHOICES, blank=True)  # what the check confirmed
     verified_at = models.DateTimeField(null=True, blank=True)
+    calendar_token = models.CharField(max_length=40, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -339,6 +340,13 @@ class Profile(models.Model):
         if title:
             return title
         return {self.COACH: "Coach", self.TEACHER: "Teacher"}.get(self.role, "Athlete")
+
+    def get_calendar_token(self, reset=False):
+        """Private token for this user's calendar feed URL. Created on first use."""
+        if reset or not self.calendar_token:
+            self.calendar_token = secrets.token_urlsafe(24)
+            self.save(update_fields=["calendar_token"])
+        return self.calendar_token
 
     @property
     def display_team(self):
@@ -505,3 +513,23 @@ class AthleticsPhoto(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class AthleteBio(models.Model):
+    """Roster details from the athletics website, used for the player spotlight."""
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="bios")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="athlete_bios")
+    photo_url = models.URLField(max_length=500, blank=True)
+    number = models.CharField(max_length=10, blank=True)
+    position = models.CharField(max_length=40, blank=True)
+    height = models.CharField(max_length=20, blank=True)
+    year = models.CharField(max_length=20, blank=True)
+    hometown = models.CharField(max_length=120, blank=True)
+    bio_url = models.URLField(max_length=500, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["team", "user"], name="one_bio_per_team")]
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} ({self.team.name})"

@@ -1,0 +1,1 @@
+{% if weather %}<span class="wx" title="Forecast at kickoff">{{ weather.icon }} {{ weather.temp }}°F · {{ weather.text }}{% if weather.rain >= 20 %} · {{ weather.rain }}% rain{% endif %}{% if weather.wind >= 10 %} · {{ weather.wind }} mph wind{% endif %}</span>{% endif %}

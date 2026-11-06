@@ -298,6 +298,7 @@ def game_hub(team, now=None):
         "sport": team.name.removeprefix("Assumption ").strip() or team.name,
         "event_word": "game" if scored else "event",
         "results_word": "scores" if scored else "results",
+        "weather": _weather(live or (upcoming[0] if upcoming else None)),
         "live_game": live,
         "today_game": today_game,
         "next_game": upcoming[0] if upcoming else None,
@@ -305,3 +306,13 @@ def game_hub(team, now=None):
         "record": team.season_record,
         "games": games,
     }
+
+
+def _weather(game):
+    from .weather import forecast_for
+
+    try:
+        return forecast_for(game)
+    except Exception:
+        logger.warning("Weather failed", exc_info=True)
+        return None

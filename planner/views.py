@@ -2,7 +2,7 @@ from datetime import timedelta
 from functools import wraps
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_not_required, login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -31,6 +31,40 @@ from .schedule_sync import ScheduleError, game_hub, sync_if_stale, sync_team
 from .services import events_on, generate_study_plan, planner_insights
 
 
+@login_not_required  # calendar apps can't log in; the private token in the URL is the key
+def calendar_feed(request, token):
+    from django.http import Http404, HttpResponse
+
+    from .calendar_feed import build_calendar
+
+    profile = Profile.objects.filter(calendar_token=token).select_related("user").first() if token else None
+    if profile is None or not profile.user.is_active:
+        raise Http404("Unknown calendar link")
+    response = HttpResponse(build_calendar(profile.user), content_type="text/calendar; charset=utf-8")
+    response["Content-Disposition"] = 'inline; filename="greyhounds.ics"'
+    response["Cache-Control"] = "private, max-age=900"
+    return response
+
+
+@login_required
+def calendar_reset(request):
+    if request.method == "POST":
+        request.user.profile.get_calendar_token(reset=True)
+        messages.success(request, "Your calendar link was changed. Add the new link to your calendar app; the old one no longer works.")
+    return redirect(request.POST.get("next") or "planner:schedule")
+
+
+def calendar_links(request):
+    token = request.user.profile.get_calendar_token()
+    https_url = request.build_absolute_uri(reverse("planner:calendar_feed", args=[token]))
+    webcal = "webcal://" + https_url.split("://", 1)[1]
+    return {
+        "calendar_url": https_url,
+        "calendar_webcal": webcal,
+        "calendar_google": "https://calendar.google.com/calendar/r?cid=" + webcal,
+    }
+
+
 @login_required
 def home(request):
     """Full-page landing: live athletics photos, the user's next game and the latest Greyhound scores."""
@@ -51,6 +85,15 @@ def home(request):
         .filter(date__gte=since).select_related("team").order_by("-date", "-start_time")[:24]
     )
     ticker = [g for g in ticker if not g.is_cancelled]
+
+    from .models import AthleteBio
+
+    bios = list(
+        AthleteBio.objects.exclude(photo_url="").filter(team__in=teams).select_related("user", "team").order_by("?")[:12]
+    )
+    if len(bios) < 6:
+        bios += list(AthleteBio.objects.exclude(photo_url="").exclude(pk__in=[b.pk for b in bios])
+                     .select_related("user", "team").order_by("?")[: 12 - len(bios)])
     return render(
         request,
         "planner/home.html",
@@ -60,6 +103,8 @@ def home(request):
             "next_hub": next_hub,
             "next_game": next_hub["next_game"] if next_hub else None,
             "ticker": ticker,
+            "bios": bios,
+            "weather": next_hub.get("weather") if next_hub else None,
         },
     )
 
@@ -162,6 +207,7 @@ def schedule(request):
             "days": days,
             "today": today,
             "teams": teams,
+            **calendar_links(request),
             # Team games and coach-assigned events are managed by the team, not here.
             "all_events": Event.objects.filter(user=request.user, assignment__isnull=True),
         },
@@ -523,6 +569,7 @@ def _coach_section(request, section):
             "eyebrow": "Coach tools",
             "section_template": template,
             "section": section,
+            **(calendar_links(request) if section == "schedule" else {}),
         },
     )
 
