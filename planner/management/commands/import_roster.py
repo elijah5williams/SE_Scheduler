@@ -5,10 +5,12 @@ The command can be run again safely: people and teams that already exist are
 reused, not duplicated.
 
 CSV columns (header row required):
-    first_name, last_name, email, role, sport
+    first_name, last_name, email, role, sport[, title]
 
     role   "athlete" or "coach" (also accepts "student", "head coach", "assistant coach")
     sport  e.g. "Football", "Women's Soccer" -> team "Assumption Football", "Assumption Women's Soccer"
+    title  optional, coaches only, e.g. "Head Coach", "Defensive Coordinator".
+           The coach titled Head Coach (or else the first coach listed) becomes the team's head coach.
 """
 import csv
 import secrets
@@ -20,7 +22,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
-from planner.models import Profile, Team
+from planner.models import Profile, StaffMember, Team
 
 SCHOOL_NAME = "Assumption"
 SCHOOL_DOMAIN = "assumption.edu"
@@ -141,7 +143,10 @@ class Command(BaseCommand):
                 errors.append(f"line {line}: {email} is listed twice for {row['sport']}")
             else:
                 seen.add((email, team_name_for(row["sport"])))
-                rows.append({**row, "email": email, "role": role})
+                title = row.get("title", "")
+                if not title and row["role"].lower() in {"head coach", "assistant coach"}:
+                    title = row["role"].title()
+                rows.append({**row, "email": email, "role": role, "title": title, "order": line})
 
         if errors:
             raise CommandError("Fix these rows and try again:\n  " + "\n  ".join(errors))
@@ -183,16 +188,22 @@ class Command(BaseCommand):
             stats["teams_created"] += 1
 
         if row["role"] == Profile.COACH:
-            if team.coach is None:
+            title = row["title"]
+            is_head = "head coach" in title.lower()
+            if team.coach is None or (is_head and team.coach != user):
                 team.coach = user
                 team.save(update_fields=["coach"])
-            elif team.coach != user:
-                self.stdout.write(
-                    self.style.WARNING(
-                        f"{team.name} already has coach {team.coach.email}; {user.email} was not made coach. "
-                        "Change it in the admin if needed."
-                    )
-                )
+            staff, _ = StaffMember.objects.get_or_create(
+                team=team,
+                user=user,
+                defaults={
+                    "title": title or ("Head Coach" if team.coach == user else "Assistant Coach"),
+                    "order": row["order"],
+                },
+            )
+            if title and staff.title != title:
+                staff.title = title
+                staff.save(update_fields=["title"])
         else:
             team.athletes.add(user)
             for assignment in team.assignments.all():

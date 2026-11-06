@@ -51,6 +51,10 @@ class Event(models.Model):
     repeat_weekly = models.BooleanField(default=False)
     weekdays = models.CharField(max_length=20, blank=True)
     repeat_until = models.DateField(blank=True, null=True)
+    # Set when a coach's assignment (or a synced team game) put this on the athlete's schedule.
+    assignment = models.ForeignKey(
+        "Assignment", null=True, blank=True, on_delete=models.CASCADE, related_name="events"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -289,10 +293,6 @@ class Profile(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile"
     )
 
-    assignment = models.ForeignKey(
-        "Assignment", null=True, blank=True, on_delete=models.CASCADE, related_name="events"
-    )
-
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=STUDENT)  # what they picked
     school_email = models.EmailField(unique=True, null=True, blank=True)
     email_verified = models.BooleanField(default=False)
@@ -317,6 +317,33 @@ class Profile(models.Model):
     def is_verified_coach(self):
         return self.verification_status == self.VERIFIED and self.verified_role == self.COACH
 
+    def _main_team(self):
+        if self.role == self.COACH:
+            role = self.user.staff_roles.select_related("team").order_by("team__name").first()
+            if role:
+                return role.team, role.title
+            team = self.user.coached_teams.order_by("name").first()
+            return team, "Head Coach" if team else None
+        if self.role == self.STUDENT:
+            team = self.user.teams.order_by("name").first()
+            if team:
+                sport = team.name.removeprefix("Assumption ").strip() or team.name
+                return team, f"{sport} Player"
+        return None, None
+
+    @property
+    def display_title(self):
+        """What the sidebar calls this person: "Head Coach", "Football Player", "Teacher", ..."""
+        _, title = self._main_team()
+        if title:
+            return title
+        return {self.COACH: "Coach", self.TEACHER: "Teacher"}.get(self.role, "Athlete")
+
+    @property
+    def display_team(self):
+        team, _ = self._main_team()
+        return team.name if team else ""
+
 def make_join_code():
     return secrets.token_hex(3).upper()
 
@@ -333,10 +360,50 @@ class Team(models.Model):
     name = models.CharField(max_length=80)
     join_code = models.CharField(max_length=8, unique=True, default=make_join_code)
     athletes = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="teams")
+    schedule_url = models.URLField(
+        blank=True, help_text="Athletics website schedule page, e.g. https://assumptiongreyhounds.com/sports/football/schedule"
+    )
+    schedule_synced_at = models.DateTimeField(null=True, blank=True)
+    # Season record from the schedule page, as [label, value] pairs: [["Overall", "6-2"], ["PCT", ".750"], ...]
+    season_record = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
+
+    @property
+    def logo_url(self):
+        """The school's logo, served by the same athletics site as the schedule."""
+        if not self.schedule_url:
+            return ""
+        from urllib.parse import urljoin
+
+        return urljoin(self.schedule_url, "/images/logos/site/site.png")
+
+    @property
+    def school_name(self):
+        return self.name.split(" ", 1)[0]
+
+    @classmethod
+    def coached_by(cls, user):
+        """Teams this user leads, as head coach or as a member of the coaching staff."""
+        return cls.objects.filter(models.Q(coach=user) | models.Q(staff__user=user)).distinct()
+
+
+class StaffMember(models.Model):
+    """A coach on a team's staff, with their title (Head Coach, Defensive Coordinator, ...)."""
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="staff")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="staff_roles")
+    title = models.CharField(max_length=80, default="Assistant Coach")
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order", "id"]
+        constraints = [models.UniqueConstraint(fields=["team", "user"], name="one_staff_role_per_team")]
+
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.username}, {self.title} ({self.team.name})"
 
 
 class Assignment(models.Model):
@@ -356,6 +423,12 @@ class Assignment(models.Model):
     notes = models.TextField(blank=True)
     repeat_weekly = models.BooleanField(default=False)
     repeat_until = models.DateField(blank=True, null=True)
+    # Filled in for games pulled from the team's schedule page; blank for ones a coach typed in.
+    external_id = models.CharField(max_length=40, blank=True, db_index=True)
+    result = models.CharField(max_length=40, blank=True)
+    opponent = models.CharField(max_length=120, blank=True)
+    opponent_logo = models.URLField(blank=True)
+    is_home = models.BooleanField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -363,6 +436,10 @@ class Assignment(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.team.name})"
+
+    @property
+    def is_synced(self):
+        return bool(self.external_id)
 
     def clean(self):
         if self.end_time and self.start_time and self.end_time <= self.start_time:
@@ -378,7 +455,7 @@ class Assignment(models.Model):
             "start_time": self.start_time,
             "end_time": self.end_time,
             "location": self.location,
-            "notes": self.notes,
+            "notes": "\n".join(part for part in [f"Final: {self.result}" if self.result else "", self.notes] if part),
             "repeat_weekly": self.repeat_weekly,
             "weekdays": "",
             "repeat_until": self.repeat_until,

@@ -76,13 +76,15 @@ Instead of everyone signing up one by one, you can create every athlete and coac
 
 1. Copy `rosters/assumption_roster_template.csv` and fill in one row per person:
 
-   | first_name | last_name | email | role | sport |
-   |---|---|---|---|---|
-   | Jane | Doe | jdoe@assumption.edu | athlete | Football |
-   | John | Smith | jsmith@assumption.edu | coach | Football |
+   | first_name | last_name | email | role | sport | title |
+   |---|---|---|---|---|---|
+   | Jane | Doe | jdoe@assumption.edu | athlete | Football | |
+   | John | Smith | jsmith@assumption.edu | coach | Football | Head Coach |
+   | Ana | Ruiz | aruiz@assumption.edu | coach | Football | Defensive Coordinator |
 
    - `role` is `athlete` or `coach` (`head coach` and `assistant coach` also work).
    - `sport` becomes the team name, with "Assumption" added in front.
+   - `title` is optional and only used for coaches. Every coach joins the team's coaching staff with that title. The coach titled "Head Coach" (or else the first coach listed) is the head coach.
    - Someone on two teams gets one row per team.
    - Emails must be `@assumption.edu`. Pass `--allow-other-domains` to skip this check.
 
@@ -106,9 +108,21 @@ Instead of everyone signing up one by one, you can create every athlete and coac
 
    Everyone can then log in with their username (the part of their email before the `@`, such as `jane.doe`) and that password. Running it again with `--password` resets everyone on the roster to the new password.
 
-Accounts are created already verified, because the roster replaces the email and admin checks. The first coach listed for a sport becomes that team's coach. Athletes are added to the team and receive any plans the coach has already assigned. You can run the command again with an updated roster: existing people and teams are reused, not duplicated. Teams can be reviewed or edited under **Teams** in the Django admin.
+Accounts are created already verified, because the roster replaces the email and admin checks. Every coach on the roster can see the team on their coach dashboard and assign practices, workouts and games. Athletes are added to the team and receive any plans the coach has already assigned. You can run the command again with an updated roster: existing people and teams are reused, not duplicated. Teams can be reviewed or edited under **Teams** in the Django admin.
 
 Keep real rosters out of git, because they contain student information. `rosters/*.csv` is ignored, except for the template.
+
+## Live game schedule, scores and season record
+
+A team's games can come straight from its page on the athletics website. Link the team once:
+
+```bash
+python3 manage.py sync_schedule "Assumption Football" https://assumptiongreyhounds.com/sports/football/schedule
+```
+
+That puts every game on every athlete's schedule. After that the app keeps itself current. When someone opens their dashboard, schedule or coach dashboard, it re-checks the website if it hasn't in the last hour, or the last 10 minutes on game day. Final scores, time or venue changes and cancelled games then reach every athlete. Coaches can also press **Sync schedule** on their dashboard, or you can run `python3 manage.py sync_schedule` to refresh every linked team.
+
+The dashboards show a game-day panel with a live countdown to the next game, both teams' logos, the latest scores and the season record (Overall, Conf, Streak, Home, Away and so on). Games from the website show "From website" on the coach dashboard instead of Edit and Delete, because the next sync would overwrite any changes.
 
 ## Run the tests
 

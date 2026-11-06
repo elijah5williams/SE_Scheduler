@@ -8,7 +8,7 @@ from django.core.management.base import CommandError
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Team
+from .models import StaffMember, Team
 
 HEADER = "first_name,last_name,email,role,sport\n"
 
@@ -99,3 +99,70 @@ class ImportRosterTests(TestCase):
                 "Sam,Ray,sray@assumption.edu,athlete,Football\n",
                 "--password", "greyhounds", "--send-invites",
             )
+
+    def test_titles_build_coaching_staff(self):
+        call_command(
+            "import_roster",
+            self.write_csv_with_titles(
+                "Ann,Assist,aassist@assumption.edu,coach,Football,Defensive Coordinator\n"
+                "Hal,Head,hhead@assumption.edu,coach,Football,Head Coach\n"
+                "Sam,Ray,sray@assumption.edu,athlete,Football,\n"
+            ),
+            stdout=open(os.devnull, "w"),
+        )
+        team = Team.objects.get(name="Assumption Football")
+        self.assertEqual(team.coach.email, "hhead@assumption.edu")
+        self.assertEqual(
+            {(m.user.email, m.title) for m in team.staff.all()},
+            {("aassist@assumption.edu", "Defensive Coordinator"), ("hhead@assumption.edu", "Head Coach")},
+        )
+        self.assertFalse(StaffMember.objects.filter(user__email="sray@assumption.edu").exists())
+
+    def test_staff_coach_sees_team_and_can_open_assign_page(self):
+        call_command(
+            "import_roster",
+            self.write_csv_with_titles(
+                "Hal,Head,hhead@assumption.edu,coach,Football,Head Coach\n"
+                "Ann,Assist,aassist@assumption.edu,coach,Football,Assistant Coach\n"
+            ),
+            "--password", "pw-12345",
+            stdout=open(os.devnull, "w"),
+        )
+        team = Team.objects.get()
+        self.client.login(username="aassist", password="pw-12345")
+        page = self.client.get(reverse("planner:coach_dashboard"))
+        self.assertContains(page, "Assumption Football")
+        self.assertContains(page, "Assistant Coach")
+        self.assertContains(page, "Head Coach")
+        self.assertEqual(self.client.get(reverse("planner:assignment_create", args=[team.pk])).status_code, 200)
+
+    def test_coach_without_title_defaults(self):
+        self.run_import(
+            "Hal,Head,hhead@assumption.edu,coach,Football\n"
+            "Ann,Assist,aassist@assumption.edu,coach,Football\n"
+        )
+        titles = dict(StaffMember.objects.values_list("user__email", "title"))
+        self.assertEqual(titles, {"hhead@assumption.edu": "Head Coach", "aassist@assumption.edu": "Assistant Coach"})
+
+    def write_csv_with_titles(self, body):
+        handle = tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8")
+        handle.write("first_name,last_name,email,role,sport,title\n" + body)
+        handle.close()
+        self.addCleanup(os.remove, handle.name)
+        return handle.name
+
+    def test_sidebar_titles(self):
+        call_command(
+            "import_roster",
+            self.write_csv_with_titles(
+                "Hal,Head,hhead@assumption.edu,coach,Football,Head Coach\n"
+                "Dee,Coord,dcoord@assumption.edu,coach,Football,Defensive Coordinator\n"
+                "Sam,Ray,sray@assumption.edu,athlete,Women's Soccer,\n"
+            ),
+            stdout=open(os.devnull, "w"),
+        )
+        title = lambda email: User.objects.get(email=email).profile.display_title
+        self.assertEqual(title("hhead@assumption.edu"), "Head Coach")
+        self.assertEqual(title("dcoord@assumption.edu"), "Defensive Coordinator")
+        self.assertEqual(title("sray@assumption.edu"), "Women's Soccer Player")
+        self.assertEqual(User.objects.get(email="sray@assumption.edu").profile.display_team, "Assumption Women's Soccer")

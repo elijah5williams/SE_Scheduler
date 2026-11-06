@@ -26,6 +26,7 @@ urlpatterns = [
     path("coach/", views.coach_dashboard, name="coach_dashboard"),
     path("coach/teams/new/", views.team_create, name="team_create"),
     path("coach/teams/<int:team_pk>/assign/", views.assignment_create, name="assignment_create"),
+    path("coach/teams/<int:team_pk>/sync/", views.team_sync, name="team_sync"),
     path("coach/assignments/<int:pk>/edit/", views.assignment_update, name="assignment_update"),
     path("coach/assignments/<int:pk>/delete/", views.assignment_delete, name="assignment_delete"),
     path("team/join/", views.team_join, name="team_join"),
