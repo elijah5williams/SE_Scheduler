@@ -86,8 +86,12 @@
 
     /* Live news photos from the athletics site */
     .photos { position: absolute; inset: 0; }
-    .photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.06); transition: opacity 1.2s ease, transform 7s ease; }
-    .photo.on { opacity: 1; transform: scale(1); }
+    .photo { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s ease; }
+    .photo.on { opacity: 1; }
+    /* Whole photo, never cropped: fitted between the logo bar and the caption, over a blurred copy of itself. */
+    .photo-bg { position: absolute; inset: -40px; width: calc(100% + 80px); height: calc(100% + 80px); object-fit: cover; filter: blur(26px) brightness(.55) saturate(1.2); }
+    .photo-fg { position: absolute; left: 18px; right: 18px; top: 76px; bottom: 190px; width: calc(100% - 36px); height: calc(100% - 266px); object-fit: contain; border-radius: 14px; transform: scale(.985); transition: transform 6s ease; }
+    .photo.on .photo-fg { transform: scale(1); }
     .shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6, 18, 40, .55) 0%, rgba(6, 18, 40, 0) 26%, rgba(6, 18, 40, 0) 48%, rgba(6, 18, 40, .88) 100%); }
     .photo-caption { text-align: left; }
     .news-tag { display: inline-block; margin-bottom: 10px; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .25); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; backdrop-filter: blur(6px); }
@@ -175,7 +179,8 @@
       .caption { bottom: 18px; }
       .slides { height: 34px; }
       .slide { font-size: 18px; }
-      .art:has(.photos) { min-height: 250px; }
+      .art:has(.photos) { min-height: 300px; }
+      .photo-fg { top: 64px; bottom: 96px; height: calc(100% - 160px); border-radius: 10px; }
       .shade { background: linear-gradient(180deg, rgba(6, 18, 40, .6) 0%, rgba(6, 18, 40, .15) 35%, rgba(6, 18, 40, .9) 100%); }
       .photo-caption .slides { height: 50px; }
       .photo-caption .slide { font-size: 15px; -webkit-line-clamp: 2; }
@@ -215,7 +220,10 @@
         {% if photos %}
           <div class="photos" aria-hidden="true">
             {% for photo in photos %}
-              <img class="photo{% if forloop.first %} on{% endif %}" src="{{ photo.image_url }}" alt="" {% if not forloop.first %}loading="lazy"{% endif %} onerror="this.remove()">
+              <div class="photo{% if forloop.first %} on{% endif %}">
+                <img class="photo-bg" src="{{ photo.image_url }}" alt="" {% if not forloop.first %}loading="lazy"{% endif %}>
+                <img class="photo-fg" src="{{ photo.image_url }}" alt="" {% if not forloop.first %}loading="lazy"{% endif %} onerror="this.parentNode.remove()">
+              </div>
             {% endfor %}
           </div>
           <div class="shade" aria-hidden="true"></div>
