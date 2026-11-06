@@ -14,13 +14,33 @@
             <header><span>{{ day.date|date:"D" }}</span><strong>{{ day.date|date:"j" }}</strong>{% if day.date == today %}<small>Today</small>{% endif %}</header>
             <div class="day-events">
                 {% for item in day.items %}
+                    {% if item.game %}
+                    {% with g=item.game %}
+                    <div class="schedule-event type-game game-card{% if g.is_cancelled %} is-cancelled{% endif %}">
+                        <div class="schedule-time">{% if g.time_tba %}Time TBA{% else %}{{ item.time|time:"g:i A" }}{% endif %}</div>
+                        <div class="game-matchup">
+                            <span class="game-logo">{% if g.opponent_logo %}<img src="{{ g.opponent_logo }}" alt="" loading="lazy" onerror="this.remove()">{% endif %}<span>{{ g.opponent|slice:":1" }}</span></span>
+                            <span class="game-text">
+                                <span class="game-sport">{{ g.team.name|cut:"Assumption " }}</span>
+                                <h3>{{ g.matchup_word }} {{ g.opponent|default:g.title }}</h3>
+                            </span>
+                        </div>
+                        {% if g.is_cancelled %}<span class="game-result">{{ g.result }}</span>
+                        {% elif g.outcome %}<span class="game-result {% if g.outcome == 'W' %}win{% elif g.outcome == 'L' %}loss{% endif %}">{{ g.outcome }} {{ g.score }}</span>
+                        {% elif g.result %}<span class="game-result">{{ g.result }}</span>
+                        {% elif item.location %}<p>{{ item.location }}</p>{% endif %}
+                    </div>
+                    {% endwith %}
+                    {% else %}
                     <div class="schedule-event type-{{ item.type }}">
                         <div class="schedule-time">{{ item.time|time:"g:i A" }}–{{ item.end_time|time:"g:i A" }}</div>
                         <span class="tag">{{ item.label }}</span>
                         <h3>{{ item.title }}</h3>
                         {% if item.location %}<p>{{ item.location }}</p>{% endif %}
-                        {% if item.kind == 'event' %}<div class="mini-actions"><a href="{% url 'planner:event_update' item.object.pk %}">Edit</a><a class="danger-link" href="{% url 'planner:event_delete' item.object.pk %}">Delete</a></div>{% endif %}
+                        {% if item.team_event %}<div class="mini-actions"><span class="team-note">From your coach</span></div>
+                        {% elif item.kind == 'event' %}<div class="mini-actions"><a href="{% url 'planner:event_update' item.object.pk %}">Edit</a><a class="danger-link" href="{% url 'planner:event_delete' item.object.pk %}">Delete</a></div>{% endif %}
                     </div>
+                    {% endif %}
                 {% empty %}
                     <div class="open-day"><span>Open</span><p>No commitments</p></div>
                 {% endfor %}
@@ -31,12 +51,24 @@
 
 <div class="legend"><span><i class="class"></i>Class</span><span><i class="practice"></i>Athletics</span><span><i class="study"></i>Study</span><span><i class="routine"></i>Routine</span><span><i class="other"></i>Other</span></div>
 
+{% for team in teams %}
+    {% if team.hub and team.hub.games or team.team_events %}
+    <section class="panel team-sched-panel">
+        <div class="panel-header">
+            <div><span class="eyebrow">Your team</span><h2>{{ team.name }}</h2></div>
+            {% if team.hub and team.hub.record %}<span class="record-chip">{{ team.hub.record.0.1 }} overall</span>{% endif %}
+        </div>
+        {% include "planner/_coach_schedule.html" with readonly=True %}
+    </section>
+    {% endif %}
+{% endfor %}
+
 <section class="panel manage-panel">
     <div class="panel-header">
         <div><span class="eyebrow">Make changes anytime</span><h2>Manage commitments</h2></div>
         <a class="button button-primary schedule-add-button" style="color: #fff !important;" href="{% url 'planner:event_create' %}">+ Add commitment</a>
     </div>
-    <p class="manage-intro">Edit class days and times, or remove commitments you no longer have.</p>
+    <p class="manage-intro">Edit class days and times, or remove commitments you no longer have. Team games and practices from your coach update on their own.</p>
     <div class="commitment-list">
         {% for event in all_events %}
             <article class="commitment-row">

@@ -56,10 +56,12 @@
             <span class="event-title">{{ a.title }}</span>
             <span class="sched-venue">{{ a.start_time|time:"g:i A" }}–{{ a.end_time|time:"g:i A" }}{% if a.location %} · {{ a.location }}{% endif %}</span>
           </div>
+          {% if not readonly %}
           <div class="assign-actions">
             <a href="{% url 'planner:assignment_update' a.pk %}">Edit</a>
             <a class="danger" href="{% url 'planner:assignment_delete' a.pk %}">Delete</a>
           </div>
+          {% endif %}
         </li>
       {% endfor %}
     </ul>

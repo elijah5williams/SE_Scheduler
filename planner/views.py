@@ -70,6 +70,10 @@ def dashboard(request):
 @login_required
 def schedule(request):
     sync_if_stale(request.user.teams.exclude(schedule_url=""))
+    teams = list(request.user.teams.prefetch_related("assignments").order_by("name"))
+    for team in teams:
+        team.hub = game_hub(team) if team.schedule_url else None
+        team.team_events = [a for a in team.assignments.all() if not a.external_id]
     today = timezone.localdate()
     days = []
     for offset in range(7):
@@ -86,6 +90,8 @@ def schedule(request):
                     "type": event.event_type,
                     "location": event.location,
                     "object": event,
+                    "game": event.assignment if event.assignment_id and event.assignment.external_id else None,
+                    "team_event": bool(event.assignment_id),
                 }
             )
         for session in StudySession.objects.filter(date=day, task__user=request.user).select_related("task"):
@@ -119,7 +125,13 @@ def schedule(request):
     return render(
         request,
         "planner/schedule.html",
-        {"days": days, "today": today, "all_events": Event.objects.filter(user=request.user)},
+        {
+            "days": days,
+            "today": today,
+            "teams": teams,
+            # Team games and coach-assigned events are managed by the team, not here.
+            "all_events": Event.objects.filter(user=request.user, assignment__isnull=True),
+        },
     )
 
 

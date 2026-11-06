@@ -112,3 +112,20 @@
 .placing { font-weight:800; font-size:.92rem; color:var(--ink); background:#f3f5f7; border:1px solid var(--line); border-radius:7px; padding:.2rem .5rem; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .status-tag { font-size:.7rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); background:#f1f1f1; border-radius:6px; padding:.2rem .5rem; }
 .sched-row.is-cancelled .sched-opp-name, .sched-row.is-cancelled .sched-day { color:var(--muted); text-decoration:line-through; }
+
+/* Athlete schedule: game cards in the week board and team schedule panels */
+.game-card { border-left-color: var(--gold) !important; }
+.game-card.is-cancelled h3 { text-decoration: line-through; color: var(--muted); }
+.game-matchup { display: flex; gap: .55rem; align-items: center; margin-top: .35rem; min-width: 0; }
+.game-logo { position: relative; flex: none; width: 30px; height: 30px; border-radius: 50%; background: #fff; border: 1px solid var(--line); display: grid; place-items: center; overflow: hidden; font-weight: 800; font-size: .75rem; color: var(--navy); }
+.game-logo img { position: absolute; inset: 3px; width: calc(100% - 6px); height: calc(100% - 6px); object-fit: contain; background: #fff; }
+.game-text { min-width: 0; }
+.game-sport { display: block; font-size: .66rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--green); }
+.game-card h3 { margin: 0; font-size: .92rem; line-height: 1.25; }
+.game-result { display: inline-block; margin-top: .45rem; padding: .12rem .45rem; border-radius: 6px; font-size: .75rem; font-weight: 800; background: #eef1f4; color: var(--ink); font-variant-numeric: tabular-nums; }
+.game-result.win { background: var(--green-light); color: var(--green); }
+.game-result.loss { background: #fbe9e8; color: var(--danger); }
+.team-note { font-size: .75rem; color: var(--muted); font-weight: 600; }
+.team-sched-panel { margin-top: 1.5rem; }
+.team-sched-panel .schedule-block:first-of-type { border-top: 0; padding-top: 0; margin-top: .5rem; }
+.record-chip { font-size: .8rem; font-weight: 800; padding: .3rem .65rem; border-radius: 999px; background: var(--green-light); color: var(--green); }
