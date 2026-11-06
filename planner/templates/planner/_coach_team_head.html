@@ -1,0 +1,21 @@
+<div class="team-head">
+  <div>
+    <h2>{{ team.name }}</h2>
+    <p class="team-meta">
+      {% if team.coach %}<span>Head coach <strong>{{ team.coach.get_full_name|default:team.coach.username }}</strong></span>{% endif %}
+      {% with staff_count=team.staff.all|length %}{% if staff_count %}<span><strong>{{ staff_count }}</strong> coach{{ staff_count|pluralize:"es" }}</span>{% endif %}{% endwith %}
+      <span><strong>{{ team.athletes.count }}</strong> athlete{{ team.athletes.count|pluralize }}</span>
+      <span>Join code <span class="code">{{ team.join_code }}</span></span>
+    </p>
+  </div>
+  <div class="team-actions">
+    {% if team.schedule_url %}
+      <form method="post" action="{% url 'planner:team_sync' team.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <button class="coach-btn ghost" type="submit">↻ Sync schedule</button>
+      </form>
+    {% endif %}
+    <a class="coach-btn green" href="{% url 'planner:assignment_create' team.pk %}">+ Assign</a>
+  </div>
+</div>

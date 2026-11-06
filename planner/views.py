@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils import timezone
 
 from .forms import (
@@ -428,19 +429,72 @@ def coach_required(view):
     return login_required(wrapper)
 
 
-@login_required
-def coach_dashboard(request):
-    profile = request.user.profile
-    if profile.role != Profile.COACH:
-        return redirect("planner:dashboard")
-    if not profile.is_verified_coach:
-        return render(request, "planner/coach_pending.html")
-    sync_if_stale(Team.coached_by(request.user).exclude(schedule_url=""))
-    teams = list(Team.coached_by(request.user).prefetch_related("athletes", "assignments", "staff__user"))
+def _coach_teams(user):
+    """The coach's teams, with their game-day data and coach-made events attached."""
+    sync_if_stale(Team.coached_by(user).exclude(schedule_url=""))
+    teams = list(Team.coached_by(user).prefetch_related("athletes", "assignments", "staff__user"))
     for team in teams:
         team.hub = game_hub(team) if team.schedule_url else None
         team.team_events = [a for a in team.assignments.all() if not a.external_id]
+    return teams
+
+
+def _coach_page(view):
+    """Coach-only page: athletes go to their dashboard, unverified coaches see the pending notice."""
+    @wraps(view)
+    def wrapper(request, *args, **kwargs):
+        profile = request.user.profile
+        if profile.role != Profile.COACH:
+            return redirect("planner:dashboard")
+        if not profile.is_verified_coach:
+            return render(request, "planner/coach_pending.html")
+        return view(request, *args, **kwargs)
+
+    return login_required(wrapper)
+
+
+@_coach_page
+def coach_dashboard(request):
+    teams = _coach_teams(request.user)
     return render(request, "planner/coach_dashboard.html", {"teams": teams, "today": timezone.localdate()})
+
+
+COACH_SECTIONS = {
+    "schedule": ("Team schedule", "Season games, scores and the practices you've assigned.", "planner/_coach_schedule.html"),
+    "roster": ("Roster", "Every athlete on your team. Search by name or email.", "planner/_coach_roster.html"),
+    "staff": ("Coaching staff", "Your team's coaches and their roles.", "planner/_coach_staff.html"),
+}
+
+
+def _coach_section(request, section):
+    title, intro, template = COACH_SECTIONS[section]
+    return render(
+        request,
+        "planner/coach_section.html",
+        {
+            "teams": _coach_teams(request.user),
+            "page_title": title,
+            "intro": intro,
+            "eyebrow": "Coach tools",
+            "section_template": template,
+            "section": section,
+        },
+    )
+
+
+@_coach_page
+def coach_schedule(request):
+    return _coach_section(request, "schedule")
+
+
+@_coach_page
+def coach_roster(request):
+    return _coach_section(request, "roster")
+
+
+@_coach_page
+def coach_staff(request):
+    return _coach_section(request, "staff")
 
 
 @coach_required
@@ -456,7 +510,10 @@ def team_sync(request, team_pk):
                 request,
                 f"Schedule updated: {counts['added']} new, {counts['updated']} changed, {counts['removed']} removed.",
             )
-    return redirect("planner:coach_dashboard")
+    next_url = request.POST.get("next", "")
+    if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        return redirect(next_url)
+    return redirect("planner:coach_schedule")
 
 
 @coach_required
@@ -482,7 +539,7 @@ def assignment_create(request, team_pk):
         assignment.save()
         assignment.push_to_team()
         messages.success(request, f"{assignment.title} was sent to {team.athletes.count()} athlete(s).")
-        return redirect("planner:coach_dashboard")
+        return redirect("planner:coach_schedule")
     return render(
         request,
         "planner/form_page.html",
@@ -498,7 +555,7 @@ def assignment_update(request, pk):
         form.save()
         assignment.sync_events()
         messages.success(request, "Updated for all athletes on the team.")
-        return redirect("planner:coach_dashboard")
+        return redirect("planner:coach_schedule")
     return render(
         request,
         "planner/form_page.html",
@@ -513,7 +570,7 @@ def assignment_delete(request, pk):
         title = assignment.title
         assignment.delete()  # removes the copies from athletes' schedules too
         messages.success(request, f"{title} was removed from every athlete's schedule.")
-        return redirect("planner:coach_dashboard")
+        return redirect("planner:coach_schedule")
     return render(
         request,
         "planner/confirm_delete.html",

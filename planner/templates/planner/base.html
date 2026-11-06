@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="A smart academic planner for college student-athletes.">
     <title>{% block title %}Athlete Academic Assistant{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'planner/styles.css' %}?v=2026-11-06">
+    <link rel="stylesheet" href="{% static 'planner/styles.css' %}?v=2026-11-06b">
+    {% if user.profile.role == 'coach' %}<link rel="stylesheet" href="{% static 'planner/coach.css' %}?v=2026-11-06b">{% endif %}
 </head>
 <body>
     <div class="app-shell">
@@ -24,6 +25,15 @@
                 {% if user.profile.role == 'coach' %}
                 <a href="{% url 'planner:coach_dashboard' %}" class="{% if request.resolver_match.url_name == 'coach_dashboard' %}active{% endif %}">
                     <span class="nav-icon">⌂</span> Coach Dashboard
+                </a>
+                <a href="{% url 'planner:coach_schedule' %}" class="{% if request.resolver_match.url_name == 'coach_schedule' %}active{% endif %}">
+                    <span class="nav-icon">□</span> Team Schedule
+                </a>
+                <a href="{% url 'planner:coach_roster' %}" class="{% if request.resolver_match.url_name == 'coach_roster' %}active{% endif %}">
+                    <span class="nav-icon">☰</span> Roster
+                </a>
+                <a href="{% url 'planner:coach_staff' %}" class="{% if request.resolver_match.url_name == 'coach_staff' %}active{% endif %}">
+                    <span class="nav-icon">★</span> Coaching Staff
                 </a>
                 <a href="{% url 'planner:team_create' %}" class="{% if request.resolver_match.url_name == 'team_create' %}active{% endif %}">
                     <span class="nav-icon">✦</span> New Team
@@ -98,6 +108,6 @@
         </main>
     </div>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
-    <script src="{% static 'planner/app.js' %}?v=2026-11-06"></script>
+    <script src="{% static 'planner/app.js' %}?v=2026-11-06b"></script>
 </body>
 </html>

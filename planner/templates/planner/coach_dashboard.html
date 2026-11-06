@@ -1,98 +1,5 @@
 {% extends "planner/base.html" %}
 {% block content %}
-<style>
-  .coach-hero { background:#112240; color:#fff; border-radius:24px; padding:2.5rem; margin-bottom:1.5rem; }
-  .coach-hero .eyebrow { color:#e0b052; font-weight:700; letter-spacing:.15em; font-size:.8rem; text-transform:uppercase; margin:0 0 .5rem; }
-  .coach-hero h1 { margin:0 0 .5rem; font-size:2.5rem; }
-  .coach-hero p { margin:0 0 1.25rem; opacity:.85; }
-  .coach-btn { display:inline-block; padding:.65rem 1.1rem; border-radius:10px; font-weight:700; text-decoration:none; background:#fff; color:#112240; }
-  .coach-btn.green { background:#2f6f56; color:#fff; }
-  .coach-btn.ghost { background:#fff; color:var(--navy); border:1px solid var(--line); cursor:pointer; font:inherit; font-weight:700; }
-  .team-actions { display:flex; gap:.6rem; flex-wrap:wrap; }
-  .team-actions form { margin:0; }
-  .team-card { background:#fff; border:1px solid #e6e2d8; border-radius:20px; padding:1.5rem; margin-bottom:1.25rem; }
-  .team-head { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap; }
-  .team-head h2 { margin:0; }
-  .code { background:#f3efe4; border-radius:8px; padding:.15rem .5rem; font-family:monospace; font-weight:700; }
-  .team-meta { margin:.5rem 0 0; color:var(--muted); display:flex; flex-wrap:wrap; align-items:center; gap:.4rem .9rem; }
-  .team-meta strong { color:var(--ink); }
-  .roster-block { margin-top:1.5rem; border-top:1px solid var(--line); padding-top:1.25rem; }
-  .roster-bar { display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1rem; }
-  .roster-bar h3 { margin:0; font-size:1.05rem; }
-  .roster-bar h3 span { color:var(--muted); font-weight:600; margin-left:.35rem; }
-  .roster-search { width:min(100%, 280px); padding:.6rem .85rem; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink); }
-  .roster-search:focus { outline:2px solid var(--green); outline-offset:1px; border-color:transparent; }
-  .roster-grid { list-style:none; margin:0; padding:.25rem; display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:.6rem; max-height:440px; overflow-y:auto; }
-  .athlete { display:flex; align-items:center; gap:.75rem; padding:.6rem .75rem; border:1px solid var(--line); border-radius:12px; background:#fbfaf7; min-width:0; }
-  .athlete[hidden] { display:none; }
-  .avatar { flex:none; width:36px; height:36px; border-radius:50%; display:grid; place-items:center; background:var(--navy); color:var(--gold); font-weight:800; font-size:.8rem; letter-spacing:.02em; }
-  .athlete-text { min-width:0; }
-  .athlete-name { display:block; font-weight:700; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .athlete-email { display:block; font-size:.8rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .roster-empty { color:var(--muted); margin:.5rem 0 0; }
-  .staff-block { margin-top:1.5rem; border-top:1px solid var(--line); padding-top:1.25rem; }
-  .staff-block h3 { margin:0 0 1rem; font-size:1.05rem; }
-  .staff-block h3 span { color:var(--muted); font-weight:600; margin-left:.35rem; }
-  .staff-grid { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:.6rem; }
-  .staff-card { display:flex; align-items:center; gap:.75rem; padding:.7rem .8rem; border:1px solid var(--line); border-radius:12px; background:#fff; min-width:0; }
-  .staff-card.head { border-color:#ecd3a3; background:#fdf8ee; }
-  .staff-card .avatar { background:var(--green); color:#fff; }
-  .staff-card.head .avatar { background:var(--gold); color:var(--navy); }
-  .staff-title { display:block; font-size:.8rem; font-weight:700; color:var(--green); letter-spacing:.02em; line-height:1.3; }
-  .staff-card.head .staff-title { color:#a8741a; }
-  .you-tag { font-size:.7rem; font-weight:700; color:var(--muted); margin-left:.3rem; }
-  .schedule-block { margin-top:1.75rem; border-top:1px solid var(--line); padding-top:1.25rem; }
-  .sched-head { display:flex; justify-content:space-between; align-items:baseline; gap:1rem; flex-wrap:wrap; margin-bottom:.9rem; }
-  .sched-head h3 { margin:0; font-size:1.05rem; }
-  .sched-head h3 span { color:var(--muted); font-weight:600; margin-left:.45rem; font-size:.9rem; }
-  .sched-source { font-size:.8rem; color:var(--muted); }
-  .sched, .events { list-style:none; margin:0; padding:0; border:1px solid var(--line); border-radius:14px; overflow:hidden; background:#fff; }
-  .sched-row, .event-row { display:grid; grid-template-columns:64px minmax(0,1fr) auto; align-items:center; gap:1rem; padding:.8rem 1.1rem; border-top:1px solid var(--line); }
-  .sched-row:first-child, .event-row:first-child { border-top:0; }
-  .sched-row.is-next { background:#fdf8ee; box-shadow:inset 3px 0 var(--gold); }
-  .sched-date { display:flex; flex-direction:column; align-items:center; line-height:1.05; text-align:center; }
-  .sched-month { font-size:.68rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--green); }
-  .sched-day { font-size:1.45rem; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; }
-  .sched-dow { font-size:.7rem; color:var(--muted); font-weight:600; }
-  .sched-opp { display:flex; align-items:center; gap:.85rem; min-width:0; }
-  .sched-logo { position:relative; flex:none; width:40px; height:40px; border-radius:50%; background:#f3f5f7; border:1px solid var(--line); display:grid; place-items:center; overflow:hidden; font-weight:800; color:var(--navy); }
-  .sched-logo img { position:absolute; inset:5px; width:calc(100% - 10px); height:calc(100% - 10px); object-fit:contain; background:#fff; }
-  .sched-opp-text, .event-text { display:flex; flex-direction:column; min-width:0; gap:.15rem; }
-  .sched-opp-name, .event-title { font-weight:700; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .sched-ha { color:var(--muted); font-weight:600; }
-  .sched-venue { font-size:.83rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .tag { display:inline-block; font-size:.66rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:.08rem .4rem; border-radius:5px; margin-right:.45rem; vertical-align:1px; }
-  .tag.home { background:#e6eef8; color:var(--navy-2); }
-  .tag.away { background:#f1efe9; color:#6b5f45; }
-  .sched-result { display:flex; align-items:center; gap:.55rem; justify-content:flex-end; min-width:108px; }
-  .outcome { width:26px; height:26px; border-radius:7px; display:grid; place-items:center; font-weight:800; font-size:.8rem; color:#fff; background:#7a8794; }
-  .outcome.win { background:var(--green); }
-  .outcome.loss { background:var(--danger); }
-  .score { font-weight:800; font-size:1rem; font-variant-numeric:tabular-nums; color:var(--ink); min-width:54px; text-align:right; }
-  .kick { font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
-  .next-tag { font-size:.68rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#a8741a; background:#f8ebcf; padding:.15rem .45rem; border-radius:6px; }
-  .event-type { font-size:.7rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--green); }
-  .sched-date.small .sched-day { font-size:1.2rem; }
-  .assign-actions a.danger { color:var(--danger); }
-  @media (max-width:600px) {
-    .sched-row { grid-template-columns:40px minmax(0,1fr) auto; gap:.7rem; padding:.75rem .8rem; }
-    .event-row { grid-template-columns:40px minmax(0,1fr); gap:.7rem; padding:.75rem .8rem; }
-    .event-row .assign-actions { grid-column:2; }
-    .sched-opp { gap:.6rem; align-items:flex-start; }
-    .sched-logo { width:30px; height:30px; margin-top:2px; }
-    .sched-logo img { inset:3px; width:calc(100% - 6px); height:calc(100% - 6px); }
-    .sched-opp-name, .sched-venue, .event-title { white-space:normal; overflow:visible; }
-    .sched-opp-name { font-size:.92rem; line-height:1.25; }
-    .sched-venue { font-size:.78rem; }
-    .sched-result { min-width:0; flex-direction:column; align-items:flex-end; gap:.25rem; }
-    .score { min-width:0; font-size:.95rem; }
-    .kick { font-size:.85rem; white-space:nowrap; }
-    .sched-day { font-size:1.25rem; }
-  }
-  .assign-actions a { margin-left:.75rem; font-weight:600; }
-  .empty { color:#5b676e; }
-</style>
-
 <section class="coach-hero">
   <p class="eyebrow">Coach command center</p>
   <h1>Lead your team.</h1>
@@ -102,159 +9,36 @@
 
 {% for team in teams %}
   <article class="team-card">
-    <div class="team-head">
-      <div>
-        <h2>{{ team.name }}</h2>
-        <p class="team-meta">
-          {% if team.coach %}<span>Head coach <strong>{{ team.coach.get_full_name|default:team.coach.username }}</strong></span>{% endif %}
-          {% with staff_count=team.staff.all|length %}{% if staff_count %}<span><strong>{{ staff_count }}</strong> coach{{ staff_count|pluralize:"es" }}</span>{% endif %}{% endwith %}
-          <span><strong>{{ team.athletes.count }}</strong> athlete{{ team.athletes.count|pluralize }}</span>
-          <span>Join code <span class="code">{{ team.join_code }}</span></span>
-        </p>
-      </div>
-      <div class="team-actions">
-        {% if team.schedule_url %}
-          <form method="post" action="{% url 'planner:team_sync' team.pk %}">
-            {% csrf_token %}
-            <button class="coach-btn ghost" type="submit">↻ Sync schedule</button>
-          </form>
-        {% endif %}
-        <a class="coach-btn green" href="{% url 'planner:assignment_create' team.pk %}">+ Assign</a>
-      </div>
-    </div>
+    {% include "planner/_coach_team_head.html" %}
 
     {% if team.hub %}{% with hub=team.hub %}{% include "planner/_game_hub.html" %}{% endwith %}{% endif %}
 
-    {% if team.staff.all %}
-      <section class="staff-block" aria-label="{{ team.name }} coaching staff">
-        <h3>Coaching staff<span>{{ team.staff.all|length }}</span></h3>
-        <ul class="staff-grid">
-          {% for member in team.staff.all %}
-            <li class="staff-card{% if member.user_id == team.coach_id %} head{% endif %}">
-              <span class="avatar" aria-hidden="true">{% if member.user.first_name %}{{ member.user.first_name|slice:":1"|upper }}{{ member.user.last_name|slice:":1"|upper }}{% else %}{{ member.user.username|slice:":2"|upper }}{% endif %}</span>
-              <span class="athlete-text">
-                <span class="athlete-name">{{ member.user.get_full_name|default:member.user.username }}{% if member.user == request.user %}<span class="you-tag">(you)</span>{% endif %}</span>
-                <span class="staff-title">{{ member.title }}</span>
-              </span>
-            </li>
-          {% endfor %}
-        </ul>
-      </section>
-    {% endif %}
-
-    <section class="roster-block" aria-label="{{ team.name }} roster">
-      <div class="roster-bar">
-        <h3>Roster<span>{{ team.athletes.count }}</span></h3>
-        {% if team.athletes.all %}
-          <input class="roster-search" type="search" placeholder="Search athletes" aria-label="Search {{ team.name }} athletes" data-roster-search="roster-{{ team.pk }}">
-        {% endif %}
-      </div>
-      {% if team.athletes.all %}
-        <ul class="roster-grid" id="roster-{{ team.pk }}">
-          {% for athlete in team.athletes.all|dictsort:"first_name"|dictsort:"last_name" %}
-            <li class="athlete" data-search="{{ athlete.get_full_name|lower }} {{ athlete.email|lower }} {{ athlete.username|lower }}">
-              <span class="avatar" aria-hidden="true">{% if athlete.first_name %}{{ athlete.first_name|slice:":1"|upper }}{{ athlete.last_name|slice:":1"|upper }}{% else %}{{ athlete.username|slice:":2"|upper }}{% endif %}</span>
-              <span class="athlete-text">
-                <span class="athlete-name">{{ athlete.get_full_name|default:athlete.username }}</span>
-                <span class="athlete-email">{{ athlete.email|default:athlete.username }}</span>
-              </span>
-            </li>
-          {% endfor %}
-        </ul>
-        <p class="roster-empty" id="roster-{{ team.pk }}-none" hidden>No athletes match that search.</p>
-      {% else %}
-        <p class="roster-empty">No athletes yet. Share the join code above.</p>
-      {% endif %}
-    </section>
-
-    {% if team.hub and team.hub.games %}
-      <section class="schedule-block" aria-label="{{ team.name }} game schedule">
-        <div class="sched-head">
-          <h3>Season schedule<span>{{ team.hub.games|length }} games</span></h3>
-          <span class="sched-source">Synced from the athletics website</span>
-        </div>
-        <ol class="sched">
-          {% for g in team.hub.games %}
-            {% with outcome=g.result|slice:":1" %}
-            <li class="sched-row{% if team.hub.next_game and g.pk == team.hub.next_game.pk %} is-next{% endif %}{% if g.result %} is-final{% endif %}">
-              <div class="sched-date">
-                <span class="sched-month">{{ g.date|date:"M" }}</span>
-                <span class="sched-day">{{ g.date|date:"j" }}</span>
-                <span class="sched-dow">{{ g.date|date:"D" }}</span>
-              </div>
-              <div class="sched-opp">
-                <span class="sched-logo">
-                  {% if g.opponent_logo %}<img src="{{ g.opponent_logo }}" alt="" loading="lazy" onerror="this.remove()">{% endif %}
-                  <span>{{ g.opponent|slice:":1" }}</span>
-                </span>
-                <span class="sched-opp-text">
-                  <span class="sched-opp-name"><span class="sched-ha">{% if g.is_home %}vs.{% else %}at{% endif %}</span> {{ g.opponent|default:g.title }}</span>
-                  <span class="sched-venue">{% if g.is_home %}<span class="tag home">Home</span>{% else %}<span class="tag away">Away</span>{% endif %}{{ g.location }}</span>
-                </span>
-              </div>
-              <div class="sched-result">
-                {% if g.result %}
-                  <span class="outcome {% if outcome == 'W' %}win{% elif outcome == 'L' %}loss{% else %}tie{% endif %}">{{ outcome }}</span>
-                  <span class="score">{{ g.result|slice:"3:" }}</span>
-                {% elif team.hub.next_game and g.pk == team.hub.next_game.pk %}
-                  <span class="next-tag">Next</span>
-                  <span class="kick">{{ g.start_time|time:"g:i A" }}</span>
-                {% else %}
-                  <span class="kick">{{ g.start_time|time:"g:i A" }}</span>
-                {% endif %}
-              </div>
-            </li>
-            {% endwith %}
-          {% endfor %}
-        </ol>
-      </section>
-    {% endif %}
-
-    {% if team.team_events %}
-      <section class="schedule-block" aria-label="{{ team.name }} practices and events">
-        <div class="sched-head"><h3>Practices &amp; team events<span>{{ team.team_events|length }}</span></h3></div>
-        <ul class="events">
-          {% for a in team.team_events %}
-            <li class="event-row">
-              <div class="sched-date small">
-                <span class="sched-month">{{ a.date|date:"M" }}</span>
-                <span class="sched-day">{{ a.date|date:"j" }}</span>
-              </div>
-              <div class="event-text">
-                <span class="event-type">{{ a.get_event_type_display }}{% if a.repeat_weekly %} · weekly{% endif %}</span>
-                <span class="event-title">{{ a.title }}</span>
-                <span class="sched-venue">{{ a.start_time|time:"g:i A" }}–{{ a.end_time|time:"g:i A" }}{% if a.location %} · {{ a.location }}{% endif %}</span>
-              </div>
-              <div class="assign-actions">
-                <a href="{% url 'planner:assignment_update' a.pk %}">Edit</a>
-                <a class="danger" href="{% url 'planner:assignment_delete' a.pk %}">Delete</a>
-              </div>
-            </li>
-          {% endfor %}
-        </ul>
-      </section>
-    {% endif %}
+    <nav class="team-tiles" aria-label="{{ team.name }} sections">
+      <a class="tile" href="{% url 'planner:coach_schedule' %}">
+        <span class="tile-label">Team schedule</span>
+        {% with next=team.hub.next_game %}
+          <strong>{% if team.hub %}{{ team.hub.games|length }} games{% else %}{{ team.team_events|length }} events{% endif %}</strong>
+          <span class="tile-sub">{% if next %}Next: {% if next.is_home %}vs.{% else %}at{% endif %} {{ next.opponent }} · {{ next.date|date:"M j" }}{% elif team.team_events %}{{ team.team_events|length }} practice{{ team.team_events|length|pluralize }} &amp; events{% else %}Nothing scheduled yet{% endif %}</span>
+        {% endwith %}
+        <span class="tile-go" aria-hidden="true">→</span>
+      </a>
+      <a class="tile" href="{% url 'planner:coach_roster' %}">
+        <span class="tile-label">Roster</span>
+        <strong>{{ team.athletes.count }} athlete{{ team.athletes.count|pluralize }}</strong>
+        <span class="tile-sub">Search players and contact details</span>
+        <span class="tile-go" aria-hidden="true">→</span>
+      </a>
+      <a class="tile" href="{% url 'planner:coach_staff' %}">
+        <span class="tile-label">Coaching staff</span>
+        <strong>{{ team.staff.all|length }} coach{{ team.staff.all|length|pluralize:"es" }}</strong>
+        <span class="tile-sub">{% if team.coach %}Head coach {{ team.coach.get_full_name|default:team.coach.username }}{% else %}No head coach yet{% endif %}</span>
+        <span class="tile-go" aria-hidden="true">→</span>
+      </a>
+    </nav>
   </article>
 {% empty %}
   <article class="team-card">
     <p class="empty">You don't have a team yet. Create one to get a join code for your athletes.</p>
   </article>
 {% endfor %}
-
-<script>
-  document.querySelectorAll("[data-roster-search]").forEach(function (input) {
-    var list = document.getElementById(input.dataset.rosterSearch);
-    var none = document.getElementById(input.dataset.rosterSearch + "-none");
-    input.addEventListener("input", function () {
-      var q = input.value.trim().toLowerCase();
-      var shown = 0;
-      list.querySelectorAll(".athlete").forEach(function (item) {
-        var match = !q || item.dataset.search.indexOf(q) !== -1;
-        item.hidden = !match;
-        if (match) shown++;
-      });
-      none.hidden = shown !== 0;
-    });
-  });
-</script>
 {% endblock %}
