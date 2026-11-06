@@ -8,15 +8,15 @@
     .role-option {
       position: relative; display: block; margin: 0; padding: .8rem .9rem;
       border: 1px solid var(--line-strong); border-radius: 13px;
-      background: var(--field); cursor: pointer;
+      background: #fff; cursor: pointer;
       transition: border-color .15s, background .15s, box-shadow .15s;
     }
     .role-option:hover { background: var(--field-hover); }
     .role-option input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
     .role-title { display: block; font-weight: 700; color: var(--text); }
     .role-desc { display: block; margin-top: .15rem; font-size: .78rem; color: var(--muted); line-height: 1.35; }
-    .role-option:has(input:checked) { border-color: var(--gold); background: rgba(255, 154, 60, .12); box-shadow: 0 0 0 1px var(--gold); }
-    .role-option:has(input:focus-visible) { box-shadow: 0 0 0 4px rgba(255, 154, 60, .28); }
+    .role-option:has(input:checked) { border-color: var(--gold); background: #eef4fd; box-shadow: 0 0 0 1px var(--gold); }
+    .role-option:has(input:focus-visible) { box-shadow: 0 0 0 4px rgba(31, 95, 191, .2); }
     @media (max-width: 560px) { .role-options { grid-template-columns: 1fr; } }
   </style>
 

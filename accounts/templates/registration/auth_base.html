@@ -1,252 +1,232 @@
 {% comment %}
-  Shared dark layout for the login and sign-up pages. Self-contained (inline CSS, system fonts)
-  so it renders the same whether or not the user is signed in.
+  Shared layout for the login and sign-up pages: a split card (landscape panel + form)
+  floating on a soft sky background. Self-contained (inline CSS, system fonts).
 {% endcomment %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#100a07">
+  <meta name="theme-color" content="#9fcff2">
   <title>{% block title %}Athlete Academic Assistant{% endblock %}</title>
   <style>
     :root {
-      --bg: #100a07;
-      --panel: rgba(30, 20, 14, .72);
-      --field: rgba(20, 13, 9, .85);
-      --field-hover: rgba(30, 20, 14, .9);
-      --line: rgba(255, 214, 178, .10);
-      --line-strong: rgba(255, 214, 178, .18);
-      --text: #fbf3ea;
-      --muted: #b39c88;
-      --soft: #e2cdb9;
-      --gold: #ff9a3c;
-      --gold-2: #ffc46b;
-      --green: #6fd3a5;
-      --danger: #ff8a7a;
+      --navy: #0a2240;
+      --text: #121a2b;
+      --muted: #66728a;
+      --soft: #2f3a50;
+      --field: #eef2f6;
+      --field-hover: #e7ecf2;
+      --line: #e3e8ee;
+      --line-strong: #d6dde6;
+      --gold: #1f5fbf;          /* accent (kept the old name so sign-up styles keep working) */
+      --accent: #1f5fbf;
+      --danger: #c2413a;
+      --ok: #0b7a62;
     }
     * { box-sizing: border-box; }
     html, body { min-height: 100%; }
     body {
       margin: 0;
       color: var(--text);
-      background:
-        radial-gradient(760px 560px at 8% 0%, rgba(255, 128, 48, .30), transparent 62%),
-        radial-gradient(700px 620px at 92% 18%, rgba(255, 186, 92, .16), transparent 60%),
-        radial-gradient(900px 700px at 70% 115%, rgba(170, 52, 24, .38), transparent 62%),
-        var(--bg);
-      background-attachment: fixed;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
+      background: linear-gradient(180deg, #8cc4ee 0%, #b7dcf6 42%, #e6f3fc 78%, #f5fafe 100%) fixed;
+      overflow-x: hidden;
     }
-    a { color: var(--gold); font-weight: 600; text-decoration: none; }
-    a:hover { color: var(--gold-2); text-decoration: underline; }
-    :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+    a { color: var(--accent); font-weight: 600; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    :focus-visible { outline: 3px solid rgba(31, 95, 191, .35); outline-offset: 2px; }
 
-    .auth {
-      min-height: 100vh;
-      max-width: 1240px;
-      margin: 0 auto;
-      padding: 40px 32px;
+    /* Sky: soft clouds and a faint horizon ring */
+    .sky { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .cloud { position: absolute; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 255, 255, .95), rgba(255, 255, 255, 0)); }
+    .ring { position: absolute; left: 50%; top: 62%; width: 1500px; height: 1500px; margin: -750px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .6); }
+
+    .page { position: relative; z-index: 1; min-height: 100vh; display: grid; place-items: center; padding: 40px 24px; }
+    .frame {
+      width: min(1100px, 100%);
       display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(0, 460px);
-      gap: 64px;
-      align-items: center;
-    }
-
-    /* Left: brand */
-    .brand { display: inline-flex; align-items: center; gap: 14px; color: var(--text); text-decoration: none; }
-    .brand:hover { text-decoration: none; color: var(--text); }
-    .brand-mark {
-      position: relative; flex: none;
-      width: 54px; height: 54px; border-radius: 16px;
-      background: #fff; display: grid; place-items: center; overflow: hidden;
-      font: 800 26px Georgia, serif; color: #0a2240;
-      box-shadow: 0 0 0 6px rgba(255, 154, 60, .16), 0 18px 40px rgba(0, 0, 0, .4);
-    }
-    .brand-mark img { position: absolute; inset: 7px; width: calc(100% - 14px); height: calc(100% - 14px); object-fit: contain; background: #fff; }
-    .brand strong { display: block; font-size: 17px; }
-    .brand small { display: block; color: var(--muted); font-size: 13px; }
-
-    .pitch { margin-top: 64px; max-width: 540px; }
-    .eyebrow {
-      display: inline-flex; align-items: center; gap: 8px;
-      margin: 0 0 18px; padding: 6px 12px;
-      border: 1px solid rgba(255, 154, 60, .38); border-radius: 999px;
-      background: rgba(255, 154, 60, .10);
-      color: var(--gold-2); font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
-    }
-    .eyebrow::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 10px var(--gold); }
-    .pitch h2 { margin: 0 0 18px; font: 700 clamp(38px, 4.4vw, 60px)/1.04 Georgia, "Times New Roman", serif; letter-spacing: -.02em; }
-    .pitch h2 em {
-      font-style: normal;
-      background: linear-gradient(90deg, #ff8a3d, #ffc46b);
-      -webkit-background-clip: text; background-clip: text; color: transparent;
-    }
-    .pitch > p { margin: 0 0 34px; color: var(--soft); font-size: 17px; max-width: 470px; }
-
-    .features { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-    .features li {
-      padding: 16px; border-radius: 16px;
-      background: linear-gradient(180deg, rgba(255, 170, 100, .07), rgba(255, 170, 100, .02));
-      border: 1px solid var(--line);
-    }
-    .features svg { width: 22px; height: 22px; color: var(--gold); }
-    .features strong { display: block; margin-top: 10px; font-size: 14px; }
-    .features span { display: block; margin-top: 2px; color: var(--muted); font-size: 13px; line-height: 1.4; }
-
-    /* Soft glowing orbs for depth */
-    .glow { position: fixed; border-radius: 50%; filter: blur(70px); pointer-events: none; z-index: 0; }
-    .glow.one { width: 340px; height: 340px; right: 14%; top: 18%; background: rgba(255, 140, 60, .28); }
-    .glow.two { width: 260px; height: 260px; right: 30%; bottom: 6%; background: rgba(255, 196, 107, .16); }
-    .auth { position: relative; z-index: 1; }
-
-    /* Right: form card */
-    .card {
-      position: relative;
-      width: 100%;
-      padding: 40px 36px 34px;
-      border-radius: 24px;
-      background: var(--panel);
-      border: 1px solid var(--line-strong);
-      box-shadow: 0 30px 80px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 154, 60, .05), inset 0 1px 0 rgba(255, 230, 205, .08);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 12px;
+      padding: 12px;
+      border-radius: 30px;
+      background: rgba(255, 255, 255, .62);
+      border: 1px solid rgba(255, 255, 255, .9);
+      box-shadow: 0 40px 90px rgba(31, 79, 128, .22);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
     }
-    .card::before {
-      content: ""; position: absolute; left: 36px; right: 36px; top: -1px; height: 2px;
-      background: linear-gradient(90deg, transparent, var(--gold), transparent);
-      border-radius: 2px;
-    }
-    h1 { margin: 0 0 6px; font: 700 30px/1.15 Georgia, "Times New Roman", serif; }
-    .lede { margin: 0 0 28px; color: var(--muted); }
 
-    .field { margin-bottom: 18px; }
-    .field > label, .label-row label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 700; color: var(--soft); letter-spacing: .01em; }
+    /* Left: landscape panel */
+    .art {
+      position: relative;
+      min-height: 620px;
+      border-radius: 22px;
+      overflow: hidden;
+      color: #fff;
+      background: linear-gradient(180deg, #0f2c5c 0%, #1f5fbf 38%, #6aa7e6 62%, #cfe5f8 72%, #163a73 73%);
+    }
+    .art svg.land { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 62%; }
+    .art-top { position: absolute; left: 20px; right: 20px; top: 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; z-index: 2; }
+    .brand { display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; font-weight: 800; letter-spacing: .03em; }
+    .brand:hover { text-decoration: none; }
+    .brand-mark { position: relative; width: 38px; height: 38px; border-radius: 11px; background: #fff; display: grid; place-items: center; overflow: hidden; font: 800 20px Georgia, serif; color: var(--navy); }
+    .brand-mark img { position: absolute; inset: 5px; width: calc(100% - 10px); height: calc(100% - 10px); object-fit: contain; background: #fff; }
+    .pill { padding: 7px 13px; border-radius: 999px; background: rgba(255, 255, 255, .18); border: 1px solid rgba(255, 255, 255, .25); color: #fff; font-size: 12px; font-weight: 600; backdrop-filter: blur(6px); white-space: nowrap; }
+    .pill:hover { background: rgba(255, 255, 255, .28); text-decoration: none; }
+    .caption { position: absolute; left: 24px; right: 24px; bottom: 34px; text-align: center; z-index: 2; }
+    .slides { position: relative; height: 74px; }
+    .slide { position: absolute; inset: 0; margin: 0; font-size: 26px; font-weight: 500; line-height: 1.25; opacity: 0; transform: translateY(8px); transition: opacity .6s ease, transform .6s ease; }
+    .slide.on { opacity: 1; transform: none; }
+    .dots { display: flex; gap: 6px; justify-content: center; margin-top: 16px; }
+    .dots button { width: 22px; height: 4px; padding: 0; border: 0; border-radius: 3px; background: rgba(255, 255, 255, .4); cursor: pointer; transition: width .3s, background .3s; }
+    .dots button.on { width: 34px; background: #fff; }
+
+    /* Right: form */
+    .form-side { display: flex; align-items: center; justify-content: center; padding: 40px 34px; }
+    .form-inner { width: 100%; max-width: 400px; }
+    .form-icon { width: 54px; height: 54px; margin-bottom: 20px; border-radius: 16px; background: #fff; display: grid; place-items: center; box-shadow: 0 8px 20px rgba(31, 79, 128, .14); }
+    .form-icon svg { width: 24px; height: 24px; color: var(--text); }
+    h1 { margin: 0 0 6px; font-size: 30px; font-weight: 700; letter-spacing: -.01em; }
+    .lede { margin: 0 0 26px; color: var(--muted); font-size: 15px; }
+
+    .field { margin-bottom: 14px; }
+    .field > label, .label-row label { display: block; margin-bottom: 7px; font-size: 13px; font-weight: 600; color: var(--soft); }
     .label-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-    .label-row a { font-size: 13px; }
+    .label-row a { font-size: 13px; color: var(--text); }
     .input { position: relative; }
-    .input svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--muted); pointer-events: none; transition: color .15s; }
+    .input svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: #8a95a8; pointer-events: none; }
     .field input:not([type=radio]):not([type=checkbox]) {
       width: 100%;
-      height: 52px;
+      height: 50px;
       padding: 0 16px;
       font: inherit; font-size: 15px;
       color: var(--text);
       background: var(--field);
-      border: 1px solid var(--line-strong);
+      border: 1px solid transparent;
       border-radius: 13px;
-      transition: border-color .15s, box-shadow .15s, background .15s;
+      transition: background .15s, border-color .15s, box-shadow .15s;
     }
-    .input input { padding-left: 46px !important; }
-    .field input::placeholder { color: #7d6a5b; }
+    .input input { padding-left: 44px !important; }
+    .field input::placeholder { color: #8a95a8; }
     .field input:hover { background: var(--field-hover); }
-    .field input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 4px rgba(255, 154, 60, .18); }
-    .input:focus-within svg { color: var(--gold); }
-    .field input[aria-invalid="true"] { border-color: var(--danger); }
-    .password input { padding-right: 72px !important; }
+    .field input:focus { outline: none; background: #fff; border-color: #b9cbe3; box-shadow: 0 0 0 4px rgba(31, 95, 191, .12); }
+    .field input[aria-invalid="true"] { border-color: var(--danger); background: #fff; }
+    .password input { padding-right: 70px !important; }
     .reveal {
       position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-      height: 34px; padding: 0 12px;
-      background: rgba(255, 214, 178, .08); color: var(--soft);
+      height: 34px; padding: 0 11px;
+      background: transparent; color: var(--muted);
       border: 0; border-radius: 9px;
       font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
     }
-    .reveal:hover { background: rgba(255, 214, 178, .15); color: var(--text); }
-    .help, .field-hint { display: block; margin-top: 6px; font-size: 13px; color: var(--muted); }
+    .reveal:hover { background: #e2e8ef; color: var(--text); }
+    .help, .field-hint { display: block; margin-top: 6px; font-size: 12.5px; color: var(--muted); }
     .help ul { margin: 0; padding-left: 18px; }
     .error, .field-error { margin: 6px 0 0; padding: 0; list-style: none; font-size: 13px; color: var(--danger); font-weight: 600; }
 
-    .notice, .error-box { margin: 0 0 20px; padding: 12px 14px; border-radius: 12px; font-size: 14px; font-weight: 600; }
-    .error-box, .notice.error { background: rgba(255, 122, 112, .1); color: var(--danger); border: 1px solid rgba(255, 122, 112, .3); }
-    .notice.success, .notice.info { background: rgba(47, 191, 143, .1); color: #7fe0bd; border: 1px solid rgba(47, 191, 143, .3); }
+    .notice, .error-box { margin: 0 0 18px; padding: 11px 14px; border-radius: 12px; font-size: 14px; font-weight: 600; }
+    .error-box, .notice.error { background: #fdeeed; color: var(--danger); border: 1px solid #f6d3d0; }
+    .notice.success, .notice.info { background: #e3f6ef; color: #075e4b; border: 1px solid #c4ebdc; }
 
     button[type=submit] {
-      width: 100%; height: 54px; margin-top: 8px;
-      font: inherit; font-size: 16px; font-weight: 800; letter-spacing: .01em;
-      color: #2a1406;
-      background: linear-gradient(100deg, #ff7a35 0%, #ff9a3c 45%, #ffc46b 100%);
+      width: 100%; height: 52px; margin-top: 10px;
+      font: inherit; font-size: 15px; font-weight: 700;
+      color: #fff;
+      background: linear-gradient(180deg, #3b414d, #14171d);
       border: 0; border-radius: 13px; cursor: pointer;
-      box-shadow: 0 14px 34px rgba(255, 122, 53, .35), inset 0 1px 0 rgba(255, 255, 255, .35);
-      transition: transform .15s, box-shadow .15s, filter .15s;
+      box-shadow: 0 10px 22px rgba(20, 23, 29, .25), inset 0 1px 0 rgba(255, 255, 255, .12);
+      transition: transform .15s, box-shadow .15s;
     }
-    button[type=submit]:hover { transform: translateY(-1px); filter: brightness(1.06); box-shadow: 0 18px 40px rgba(255, 122, 53, .45), inset 0 1px 0 rgba(255, 255, 255, .35); }
-    button[type=submit]:active { transform: translateY(0); }
-
-    .divider { display: flex; align-items: center; gap: 12px; margin: 26px 0 16px; color: var(--muted); font-size: 13px; }
-    .divider::before, .divider::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+    button[type=submit]:hover { transform: translateY(-1px); box-shadow: 0 14px 28px rgba(20, 23, 29, .3), inset 0 1px 0 rgba(255, 255, 255, .12); }
+    .divider { display: flex; align-items: center; gap: 12px; margin: 24px 0 14px; color: var(--muted); font-size: 12.5px; }
+    .divider::before, .divider::after { content: ""; flex: 1; border-top: 1px dashed var(--line-strong); }
     .switch { margin: 0; text-align: center; color: var(--muted); font-size: 14px; }
     .secondary {
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      height: 50px; border-radius: 13px;
-      border: 1px solid var(--line-strong); background: rgba(255, 214, 178, .04);
+      display: flex; align-items: center; justify-content: center;
+      height: 48px; border-radius: 13px;
+      background: #fff; border: 1px solid var(--line);
       color: var(--text); font-weight: 700;
+      box-shadow: 0 2px 8px rgba(31, 79, 128, .06);
     }
-    .secondary:hover { background: rgba(255, 214, 178, .09); color: var(--text); text-decoration: none; }
-    .fine { margin: 20px 0 0; text-align: center; color: #8f7a69; font-size: 12px; }
+    .secondary:hover { background: #f7f9fb; text-decoration: none; }
+    .fine { margin: 18px 0 0; text-align: center; color: #8a95a8; font-size: 12px; }
 
-    @media (max-width: 980px) {
-      .auth { grid-template-columns: 1fr; gap: 28px; padding: 24px 16px 40px; max-width: 520px; }
-      .pitch { margin-top: 28px; }
-      .pitch h2 { font-size: 36px; }
-      .pitch > p, .features { display: none; }
-      .card { padding: 30px 22px 26px; border-radius: 20px; }
-      .card::before { left: 22px; right: 22px; }
+    @media (max-width: 880px) {
+      .page { padding: 18px 14px 32px; align-items: start; }
+      .frame { grid-template-columns: 1fr; border-radius: 24px; padding: 10px; }
+      .art { min-height: 190px; border-radius: 18px; }
+      .art svg.land { height: 55%; }
+      .caption { bottom: 18px; }
+      .slides { height: 34px; }
+      .slide { font-size: 18px; }
+      .slide br { display: none; }
+      .dots { margin-top: 8px; }
+      .form-side { padding: 22px 12px 18px; }
+      .form-icon { display: none; }
       h1 { font-size: 26px; }
     }
   </style>
 </head>
 <body>
-  <div class="glow one" aria-hidden="true"></div>
-  <div class="glow two" aria-hidden="true"></div>
-  <div class="auth">
-    <section aria-label="About Athlete Academic Assistant">
-      <a class="brand" href="{% url 'login' %}">
-        <span class="brand-mark">
-          <img src="https://assumptiongreyhounds.com/images/logos/site/site.png" alt="" onerror="this.remove()">
-          A
-        </span>
-        <span>
-          <strong>Athlete Academic Assistant</strong>
-          <small>Assumption University Greyhounds</small>
-        </span>
-      </a>
+  <div class="sky" aria-hidden="true">
+    <div class="ring"></div>
+    <div class="cloud" style="width:760px;height:320px;left:-200px;bottom:-110px"></div>
+    <div class="cloud" style="width:680px;height:280px;right:-160px;bottom:-40px"></div>
+    <div class="cloud" style="width:520px;height:220px;left:35%;bottom:-150px"></div>
+    <div class="cloud" style="width:420px;height:160px;right:8%;top:6%;opacity:.55"></div>
+  </div>
 
-      <div class="pitch">
-        <p class="eyebrow">Built for Greyhounds</p>
-        <h2>School. Sport.<br><em>Success.</em></h2>
-        <p>One schedule for your classes, practices, games and study time, so nothing gets missed.</p>
-        <ul class="features">
-          <li>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            <strong>Live schedules</strong>
-            <span>Games, scores and countdowns for every team.</span>
-          </li>
-          <li>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-            <strong>Smart study plans</strong>
-            <span>Study time placed around class and practice.</span>
-          </li>
-          <li>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <strong>For coaches too</strong>
-            <span>Send practices straight to your roster.</span>
-          </li>
-        </ul>
-      </div>
-    </section>
+  <div class="page">
+    <div class="frame">
+      <section class="art" aria-label="Athlete Academic Assistant">
+        <div class="art-top">
+          <a class="brand" href="{% url 'login' %}">
+            <span class="brand-mark">
+              <img src="https://assumptiongreyhounds.com/images/logos/site/site.png" alt="" onerror="this.remove()">
+              A
+            </span>
+            GREYHOUNDS
+          </a>
+          <a class="pill" href="https://assumptiongreyhounds.com" target="_blank" rel="noopener">Athletics site &rarr;</a>
+        </div>
 
-    <main class="card">
-      {% if messages %}
-        {% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}
-      {% endif %}
-      {% block content %}{% endblock %}
-    </main>
+        <svg class="land" viewBox="0 0 600 420" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 150 C120 80 240 30 335 60 C430 90 520 175 600 150 L600 420 L0 420Z" fill="#1d4b93"/>
+          <path d="M335 60 C430 90 520 175 600 150" stroke="#a9cdf5" stroke-width="2" fill="none" opacity=".75"/>
+          <path d="M0 235 C150 165 280 140 385 182 C475 218 545 262 600 248 L600 420 L0 420Z" fill="#163b78"/>
+          <path d="M0 320 C170 268 320 270 440 300 C520 320 570 335 600 330 L600 420 L0 420Z" fill="#0f2c5c"/>
+        </svg>
+
+        <div class="caption">
+          <div class="slides" aria-live="polite">
+            <p class="slide on">School. Sport. <br>Success.</p>
+            <p class="slide">Every Greyhound team, <br>live in one place.</p>
+            <p class="slide">Study time that fits <br>around practice.</p>
+          </div>
+          <div class="dots" role="tablist" aria-label="Highlights">
+            <button type="button" class="on" aria-label="Highlight 1"></button>
+            <button type="button" aria-label="Highlight 2"></button>
+            <button type="button" aria-label="Highlight 3"></button>
+          </div>
+        </div>
+      </section>
+
+      <main class="form-side">
+        <div class="form-inner">
+          {% if messages %}
+            {% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}
+          {% endif %}
+          {% block content %}{% endblock %}
+        </div>
+      </main>
+    </div>
   </div>
 
   <script>
+    // Show / hide password
     document.querySelectorAll("[data-reveal]").forEach(function (button) {
       var input = document.getElementById(button.getAttribute("data-reveal"));
       if (!input) return;
@@ -257,6 +237,27 @@
         button.setAttribute("aria-pressed", show ? "true" : "false");
       });
     });
+
+    // Rotating captions on the landscape panel
+    (function () {
+      var slides = document.querySelectorAll(".slide");
+      var dots = document.querySelectorAll(".dots button");
+      if (!slides.length) return;
+      var current = 0, timer;
+      function show(i) {
+        slides[current].classList.remove("on"); dots[current].classList.remove("on");
+        current = i;
+        slides[current].classList.add("on"); dots[current].classList.add("on");
+      }
+      function start() {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        timer = setInterval(function () { show((current + 1) % slides.length); }, 5000);
+      }
+      dots.forEach(function (dot, i) {
+        dot.addEventListener("click", function () { clearInterval(timer); show(i); start(); });
+      });
+      start();
+    })();
   </script>
 </body>
 </html>
