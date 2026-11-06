@@ -8,6 +8,7 @@ import html
 import json
 import logging
 import re
+import ssl
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
@@ -62,10 +63,20 @@ class Game:
         }
 
 
+def _ssl_context():
+    # Python from python.org on macOS ships without trusted certificates, so HTTPS downloads
+    # fail with CERTIFICATE_VERIFY_FAILED. certifi provides the standard list on every computer.
+    try:
+        import certifi
+    except ImportError:
+        return ssl.create_default_context()
+    return ssl.create_default_context(cafile=certifi.where())
+
+
 def fetch(url, timeout=10):
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        with urllib.request.urlopen(request, timeout=timeout, context=_ssl_context()) as response:
             return response.read().decode("utf-8", errors="replace")
     except Exception as exc:  # network errors, timeouts, HTTP errors
         raise ScheduleError(f"Could not download {url}: {exc}") from exc
