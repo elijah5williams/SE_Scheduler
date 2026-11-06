@@ -70,6 +70,46 @@ python manage.py load_demo
 
 Then refresh the website. This is useful when demonstrating the project in class. The command intentionally replaces existing schedule and assignment data, so only use it when you want the demo setup.
 
+## Create accounts for Assumption athletes and coaches
+
+Instead of everyone signing up one by one, you can create every athlete and coach account from a roster spreadsheet. Each person is placed on a team named after their sport, such as **Assumption Football** or **Assumption Women's Soccer**.
+
+1. Copy `rosters/assumption_roster_template.csv` and fill in one row per person:
+
+   | first_name | last_name | email | role | sport |
+   |---|---|---|---|---|
+   | Jane | Doe | jdoe@assumption.edu | athlete | Football |
+   | John | Smith | jsmith@assumption.edu | coach | Football |
+
+   - `role` is `athlete` or `coach` (`head coach` and `assistant coach` also work).
+   - `sport` becomes the team name, with "Assumption" added in front.
+   - Someone on two teams gets one row per team.
+   - Emails must be `@assumption.edu`. Pass `--allow-other-domains` to skip this check.
+
+2. Check the file without saving anything:
+
+   ```bash
+   python manage.py import_roster rosters/my_roster.csv --dry-run
+   ```
+
+3. Import it, emailing everyone a link to set their password:
+
+   ```bash
+   python manage.py import_roster rosters/my_roster.csv --send-invites
+   ```
+
+   For a class demo, skip the emails and give every account the same password instead:
+
+   ```bash
+   python manage.py import_roster rosters/my_roster.csv --password greyhounds
+   ```
+
+   Everyone can then log in with their username (the part of their email before the `@`, such as `jane.doe`) and that password. Running it again with `--password` resets everyone on the roster to the new password.
+
+Accounts are created already verified, because the roster replaces the email and admin checks. The first coach listed for a sport becomes that team's coach. Athletes are added to the team and receive any plans the coach has already assigned. You can run the command again with an updated roster: existing people and teams are reused, not duplicated. Teams can be reviewed or edited under **Teams** in the Django admin.
+
+Keep real rosters out of git, because they contain student information. `rosters/*.csv` is ignored, except for the template.
+
 ## Run the tests
 
 ```bash

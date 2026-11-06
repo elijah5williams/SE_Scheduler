@@ -1,6 +1,12 @@
 from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 
-from .models import AcademicTask, Event, FlexibleRoutine
+from .models import AcademicTask, Assignment, Event, FlexibleRoutine, Profile, Team
+
+# Replace with your school's email domain(s). Any address ending in .edu is
+# also accepted while testing (see clean_school_email below).
+ALLOWED_DOMAINS = {"assumption.edu"}
 
 
 class DateInput(forms.DateInput):
@@ -13,6 +19,31 @@ class TimeInput(forms.TimeInput):
 
 class DateTimeInput(forms.DateTimeInput):
     input_type = "datetime-local"
+
+
+class SignupForm(UserCreationForm):
+    field_order = ["username", "school_email", "role", "password1", "password2"]
+
+    role = forms.ChoiceField(
+        choices=Profile.ROLE_CHOICES,
+        widget=forms.RadioSelect,
+        initial=Profile.STUDENT,
+        label="I am a",
+    )
+    school_email = forms.EmailField(label="School email")
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = ("username", "school_email", "role")
+
+    def clean_school_email(self):
+        email = self.cleaned_data["school_email"].lower()
+        domain = email.rsplit("@", 1)[1]
+        if domain not in ALLOWED_DOMAINS and not domain.endswith(".edu"):
+            raise forms.ValidationError("Please use your school email address.")
+        if Profile.objects.filter(school_email=email).exists():
+            raise forms.ValidationError("That email is already registered.")
+        return email
 
 
 class EventForm(forms.ModelForm):
@@ -163,3 +194,53 @@ class FlexibleRoutineForm(forms.ModelForm):
             routine.save()
             self.save_m2m()
         return routine
+
+class TeamForm(forms.ModelForm):
+    class Meta:
+        model = Team
+        fields = ["name"]
+        labels = {"name": "Team name"}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["name"].widget.attrs["placeholder"] = "Example: Varsity Football"
+
+
+class AssignmentForm(forms.ModelForm):
+    class Meta:
+        model = Assignment
+        fields = [
+            "event_type", "title", "date", "start_time", "end_time",
+            "location", "repeat_weekly", "repeat_until", "notes",
+        ]
+        widgets = {
+            "date": DateInput(),
+            "start_time": TimeInput(format="%H:%M"),
+            "end_time": TimeInput(format="%H:%M"),
+            "repeat_until": DateInput(),
+            "notes": forms.Textarea(attrs={"rows": 3}),
+        }
+        labels = {
+            "event_type": "What is it?",
+            "date": "First date",
+            "repeat_weekly": "Repeat every week",
+            "repeat_until": "Repeat until (optional)",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["title"].widget.attrs["placeholder"] = "Example: Lower body lift"
+        self.fields["location"].widget.attrs["placeholder"] = "Example: Weight room"
+        self.fields["notes"].widget.attrs["placeholder"] = "Anything athletes should bring or know"
+
+
+class JoinTeamForm(forms.Form):
+    code = forms.CharField(max_length=8, label="Team code")
+
+    def clean_code(self):
+        code = self.cleaned_data["code"].strip().upper()
+        try:
+            self.team = Team.objects.get(join_code=code)
+        except Team.DoesNotExist:
+            raise forms.ValidationError("That code doesn't match a team.")
+        return code

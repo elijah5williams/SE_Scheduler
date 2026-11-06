@@ -1,4 +1,5 @@
 from datetime import timedelta
+from functools import wraps
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -6,13 +7,31 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from .forms import AcademicTaskForm, EventForm, FlexibleRoutineForm
-from .models import AcademicTask, Event, FlexibleRoutine, RoutineSession, StudySession
+from .forms import (
+    AcademicTaskForm,
+    AssignmentForm,
+    EventForm,
+    FlexibleRoutineForm,
+    JoinTeamForm,
+    TeamForm,
+)
+from .models import (
+    AcademicTask,
+    Assignment,
+    Event,
+    FlexibleRoutine,
+    Profile,
+    RoutineSession,
+    StudySession,
+    Team,
+)
 from .services import events_on, generate_study_plan, planner_insights
 
 
 @login_required
 def dashboard(request):
+    if request.user.profile.role == Profile.COACH:
+        return redirect("planner:coach_dashboard")
     today = timezone.localdate()
     next_week = today + timedelta(days=7)
     today_events = sorted(events_on(today, request.user), key=lambda event: event.start_time)
@@ -112,6 +131,9 @@ def event_create(request):
 @login_required
 def event_update(request, pk):
     event = get_object_or_404(Event, pk=pk, user=request.user)
+    if event.assignment_id:
+        messages.info(request, "Your coach assigned this, so only your coach can change it.")
+        return redirect("planner:schedule")
     form = EventForm(request.POST or None, instance=event)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -123,6 +145,9 @@ def event_update(request, pk):
 @login_required
 def event_delete(request, pk):
     event = get_object_or_404(Event, pk=pk, user=request.user)
+    if event.assignment_id:
+        messages.info(request, "Your coach assigned this, so only your coach can change it.")
+        return redirect("planner:schedule")
     course_codes = list(
         AcademicTask.objects.filter(user=request.user).order_by("course").values_list("course", flat=True).distinct()
     )
@@ -380,3 +405,105 @@ def routine_session_toggle(request, pk):
         session.save(update_fields=["completed"])
         messages.success(request, "Routine session updated.")
     return redirect(request.POST.get("next", "planner:study_planner"))
+
+
+# ---------------------------------------------------------------------------
+# Coach tools
+# ---------------------------------------------------------------------------
+
+
+def coach_required(view):
+    @wraps(view)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.profile.is_verified_coach:
+            return redirect("planner:coach_dashboard")
+        return view(request, *args, **kwargs)
+
+    return login_required(wrapper)
+
+
+@login_required
+def coach_dashboard(request):
+    profile = request.user.profile
+    if profile.role != Profile.COACH:
+        return redirect("planner:dashboard")
+    if not profile.is_verified_coach:
+        return render(request, "planner/coach_pending.html")
+    teams = Team.objects.filter(coach=request.user).prefetch_related("athletes", "assignments")
+    return render(request, "planner/coach_dashboard.html", {"teams": teams, "today": timezone.localdate()})
+
+
+@coach_required
+def team_create(request):
+    form = TeamForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        team = form.save(commit=False)
+        team.coach = request.user
+        team.save()
+        messages.success(request, f"{team.name} created. Share the code {team.join_code} with your athletes.")
+        return redirect("planner:coach_dashboard")
+    return render(request, "planner/form_page.html", {"form": form, "form_type": "team", "title": "Create a team"})
+
+
+@coach_required
+def assignment_create(request, team_pk):
+    team = get_object_or_404(Team, pk=team_pk, coach=request.user)
+    form = AssignmentForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        assignment = form.save(commit=False)
+        assignment.team = team
+        assignment.save()
+        assignment.push_to_team()
+        messages.success(request, f"{assignment.title} was sent to {team.athletes.count()} athlete(s).")
+        return redirect("planner:coach_dashboard")
+    return render(
+        request,
+        "planner/form_page.html",
+        {"form": form, "form_type": "event", "title": f"Assign to {team.name}"},
+    )
+
+
+@coach_required
+def assignment_update(request, pk):
+    assignment = get_object_or_404(Assignment, pk=pk, team__coach=request.user)
+    form = AssignmentForm(request.POST or None, instance=assignment)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        assignment.sync_events()
+        messages.success(request, "Updated for all athletes on the team.")
+        return redirect("planner:coach_dashboard")
+    return render(
+        request,
+        "planner/form_page.html",
+        {"form": form, "form_type": "event", "title": "Edit assignment", "editing": True},
+    )
+
+
+@coach_required
+def assignment_delete(request, pk):
+    assignment = get_object_or_404(Assignment, pk=pk, team__coach=request.user)
+    if request.method == "POST":
+        title = assignment.title
+        assignment.delete()  # removes the copies from athletes' schedules too
+        messages.success(request, f"{title} was removed from every athlete's schedule.")
+        return redirect("planner:coach_dashboard")
+    return render(
+        request,
+        "planner/confirm_delete.html",
+        {"object": assignment, "cancel_url": reverse("planner:coach_dashboard")},
+    )
+
+
+@login_required
+def team_join(request):
+    if request.user.profile.role == Profile.COACH:
+        return redirect("planner:coach_dashboard")
+    form = JoinTeamForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        team = form.team
+        team.athletes.add(request.user)
+        for assignment in team.assignments.all():
+            assignment.push_to(request.user)
+        messages.success(request, f"You joined {team.name}. Your coach's plans are now on your schedule.")
+        return redirect("planner:schedule")
+    return render(request, "planner/form_page.html", {"form": form, "form_type": "team", "title": "Join your team"})

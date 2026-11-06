@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AcademicTask, Event, FlexibleRoutine, RoutineSession, StudySession
+from .models import AcademicTask, Event, FlexibleRoutine, RoutineSession, StudySession, Profile, Team
 
 
 @admin.register(Event)
@@ -34,3 +34,21 @@ class FlexibleRoutineAdmin(admin.ModelAdmin):
 class RoutineSessionAdmin(admin.ModelAdmin):
     list_display = ("routine", "date", "start_time", "end_time", "completed")
     list_filter = ("completed", "generated")
+
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "role", "school_email", "email_verified", "verification_status", "verified_role")
+    list_filter = ("role", "verification_status")
+    search_fields = ("user__username", "school_email")
+
+
+@admin.register(Team)
+class TeamAdmin(admin.ModelAdmin):
+    list_display = ("name", "coach", "join_code", "athlete_count")
+    search_fields = ("name", "coach__email", "athletes__email")
+    autocomplete_fields = ("coach",)
+    filter_horizontal = ("athletes",)
+
+    @admin.display(description="Athletes")
+    def athlete_count(self, team):
+        return team.athletes.count()
