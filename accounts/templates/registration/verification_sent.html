@@ -1,0 +1,15 @@
+{% extends "registration/auth_base.html" %}
+{% block title %}Check your email · Athlete Academic Assistant{% endblock %}
+{% block content %}
+  <div class="form-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></div>
+  <h1>Check your email</h1>
+  <p class="lede">
+    We sent a verification link to
+    {% if request.session.verification_email %}<strong>{{ request.session.verification_email }}</strong>{% else %}your school email{% endif %}.
+    Open it to finish creating your account.
+  </p>
+  <div class="notice info">Students can log in as soon as they click the link. Teacher and coach accounts are reviewed first.</div>
+  <p class="fine" style="text-align:left;margin-top:0">Don't see it after a few minutes? Check your spam or junk folder.</p>
+  <div class="divider">Already verified?</div>
+  <a class="secondary" href="{% url 'login' %}">Back to log in</a>
+{% endblock %}

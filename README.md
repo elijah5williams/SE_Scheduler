@@ -148,6 +148,18 @@ The repo includes `render.yaml`, which sets up the website and a free Postgres d
 3. To load the roster without putting student information on GitHub, open the **se-scheduler** service, go to **Environment → Secret Files**, add a file named `football.csv` and paste in the roster. Then click **Manual Deploy → Deploy latest commit**. Each deploy imports the roster and links the football schedule.
 4. Your site is at the `https://se-scheduler-….onrender.com` address shown at the top of the service page.
 
+### Sending real email
+
+Sign-up verification and "Forgot password?" links need a real email service. Without one, emails only print to the server log. With a free [Brevo](https://www.brevo.com) account:
+
+1. In Brevo, go to **SMTP & API** and create an SMTP key. Under **Senders**, add and verify the address you'll send from.
+2. In Render, open **se-scheduler → Environment** and set:
+   - `EMAIL_HOST` = `smtp-relay.brevo.com`
+   - `EMAIL_HOST_USER` = your Brevo SMTP login
+   - `EMAIL_HOST_PASSWORD` = the SMTP key
+   - `DEFAULT_FROM_EMAIL` = `Athlete Academic Assistant <the-sender-you-verified@example.com>`
+3. Save. Render redeploys, and emails start sending.
+
 On the free plan the site sleeps after a while without visitors, so the first visit afterwards takes about 30 seconds.
 
 ## Run the tests

@@ -1,11 +1,24 @@
 from datetime import datetime, time, timedelta
 
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import AcademicTask, Event, FlexibleRoutine, RoutineSession, StudySession
+from .models import AcademicTask, Event, FlexibleRoutine, Profile, RoutineSession, StudySession
 from .services import generate_study_plan
+
+
+class StudentTestCase(TestCase):
+    """Every planner item belongs to a user, so tests run as a logged-in, verified student."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("student", password="pw-test-123")
+        profile = self.user.profile
+        profile.role = profile.verified_role = Profile.STUDENT
+        profile.verification_status = Profile.VERIFIED
+        profile.save()
+        self.client.login(username="student", password="pw-test-123")
 
 
 class PlannerModelTests(TestCase):
@@ -43,10 +56,11 @@ class PlannerModelTests(TestCase):
         self.assertTrue(event.occurs_on(monday + timedelta(days=1)))
 
 
-class StudyPlannerTests(TestCase):
+class StudyPlannerTests(StudentTestCase):
     def test_planner_creates_session_around_event(self):
         today = timezone.localdate()
         Event.objects.create(
+            user=self.user,
             title="Practice",
             event_type=Event.PRACTICE,
             date=today,
@@ -55,13 +69,14 @@ class StudyPlannerTests(TestCase):
         )
         due = timezone.now() + timedelta(days=2)
         task = AcademicTask.objects.create(
+            user=self.user,
             title="Data structures homework",
             course="CSC 305",
             due_date=due,
             estimated_minutes=120,
             priority="high",
         )
-        result = generate_study_plan()
+        result = generate_study_plan(self.user)
         sessions = StudySession.objects.filter(task=task)
         self.assertGreater(result["created"], 0)
         self.assertTrue(sessions.exists())
@@ -71,6 +86,7 @@ class StudyPlannerTests(TestCase):
     def test_completed_sessions_are_preserved_when_regenerating(self):
         tomorrow = timezone.localdate() + timedelta(days=1)
         task = AcademicTask.objects.create(
+            user=self.user,
             title="Exam review",
             course="MGT 100",
             due_date=timezone.now() + timedelta(days=3),
@@ -83,19 +99,20 @@ class StudyPlannerTests(TestCase):
             end_time=time(11, 0),
             completed=True,
         )
-        generate_study_plan()
+        generate_study_plan(self.user)
         self.assertTrue(StudySession.objects.filter(pk=session.pk).exists())
 
     def test_generated_sessions_do_not_overlap(self):
         due = timezone.now() + timedelta(days=2)
         for number in range(2):
             AcademicTask.objects.create(
+            user=self.user,
                 title=f"Assignment {number}",
                 course="CSC 305",
                 due_date=due,
                 estimated_minutes=90,
             )
-        generate_study_plan()
+        generate_study_plan(self.user)
         sessions = list(StudySession.objects.order_by("date", "start_time"))
         for first, second in zip(sessions, sessions[1:]):
             if first.date == second.date:
@@ -104,6 +121,7 @@ class StudyPlannerTests(TestCase):
     def test_daily_flexible_routine_is_placed_in_open_time(self):
         today = timezone.localdate()
         Event.objects.create(
+            user=self.user,
             title="Morning class",
             event_type=Event.CLASS,
             date=today,
@@ -113,11 +131,12 @@ class StudyPlannerTests(TestCase):
             weekdays="0,1,2,3,4,5,6",
         )
         routine = FlexibleRoutine.objects.create(
+            user=self.user,
             title="Bible study",
             duration_minutes=20,
             weekdays="0,1,2,3,4,5,6",
         )
-        result = generate_study_plan()
+        result = generate_study_plan(self.user)
         future_sessions = RoutineSession.objects.filter(
             routine=routine,
             date__gt=today,
@@ -130,11 +149,12 @@ class StudyPlannerTests(TestCase):
 
     def test_flexible_routine_can_generate_without_academic_tasks(self):
         FlexibleRoutine.objects.create(
+            user=self.user,
             title="Stretching",
             duration_minutes=10,
             weekdays="0,1,2,3,4,5,6",
         )
-        result = generate_study_plan()
+        result = generate_study_plan(self.user)
         self.assertGreater(result["created"], 0)
         self.assertEqual(result["study_created"], 0)
         self.assertGreater(result["routine_created"], 0)
@@ -145,6 +165,7 @@ class StudyPlannerTests(TestCase):
         if saturday == today:
             saturday += timedelta(days=7)
         Event.objects.create(
+            user=self.user,
             title="Team activity",
             event_type=Event.MEETING,
             date=saturday,
@@ -152,6 +173,7 @@ class StudyPlannerTests(TestCase):
             end_time=time(11, 45),
         )
         routine = FlexibleRoutine.objects.create(
+            user=self.user,
             title="Weekend breakfast",
             duration_minutes=25,
             weekdays="5,6",
@@ -159,7 +181,7 @@ class StudyPlannerTests(TestCase):
             window_end=time(13, 30),
         )
 
-        generate_study_plan()
+        generate_study_plan(self.user)
 
         session = RoutineSession.objects.get(routine=routine, date=saturday)
         self.assertGreaterEqual(session.start_time, time(11, 0))
@@ -171,6 +193,7 @@ class StudyPlannerTests(TestCase):
         tomorrow = today + timedelta(days=1)
         weekday = str(tomorrow.weekday())
         routine = FlexibleRoutine.objects.create(
+            user=self.user,
             title="Lunch",
             duration_minutes=30,
             weekdays=weekday,
@@ -178,6 +201,7 @@ class StudyPlannerTests(TestCase):
             window_end=time(12, 0),
         )
         task = AcademicTask.objects.create(
+            user=self.user,
             title="Large project",
             course="CSC 305",
             due_date=timezone.now() + timedelta(days=2),
@@ -185,7 +209,7 @@ class StudyPlannerTests(TestCase):
             priority="high",
         )
 
-        generate_study_plan()
+        generate_study_plan(self.user)
 
         routine_session = RoutineSession.objects.get(routine=routine, date=tomorrow)
         for session in StudySession.objects.filter(task=task, date=tomorrow):
@@ -195,7 +219,7 @@ class StudyPlannerTests(TestCase):
             )
 
 
-class PageTests(TestCase):
+class PageTests(StudentTestCase):
     def test_main_pages_load(self):
         for route in ["dashboard", "schedule", "tasks", "study_planner", "event_create", "task_create", "routine_create"]:
             response = self.client.get(reverse(f"planner:{route}"))
@@ -204,6 +228,7 @@ class PageTests(TestCase):
     def test_study_planner_groups_items_inside_calendar_days(self):
         day = timezone.localdate() + timedelta(days=1)
         task = AcademicTask.objects.create(
+            user=self.user,
             title="Linked list practice",
             course="CSC 305",
             due_date=timezone.now() + timedelta(days=3),
@@ -226,6 +251,7 @@ class PageTests(TestCase):
     def test_routine_appears_inside_calendar_day(self):
         day = timezone.localdate() + timedelta(days=1)
         routine = FlexibleRoutine.objects.create(
+            user=self.user,
             title="Bible study",
             duration_minutes=20,
             weekdays="0,1,2,3,4,5,6",
@@ -278,6 +304,7 @@ class PageTests(TestCase):
 
     def test_dashboard_shows_known_end_times(self):
         event = Event.objects.create(
+            user=self.user,
             title="CSC 305",
             event_type=Event.CLASS,
             date=timezone.localdate(),
@@ -307,6 +334,7 @@ class PageTests(TestCase):
 
     def test_schedule_exposes_event_management(self):
         event = Event.objects.create(
+            user=self.user,
             title="CSC 305",
             event_type=Event.CLASS,
             date=timezone.localdate(),
@@ -319,6 +347,7 @@ class PageTests(TestCase):
 
     def test_edit_event_supports_multiple_weekdays(self):
         event = Event.objects.create(
+            user=self.user,
             title="CSC 305",
             event_type=Event.CLASS,
             date=timezone.localdate(),
@@ -346,6 +375,7 @@ class PageTests(TestCase):
 
     def test_delete_event(self):
         event = Event.objects.create(
+            user=self.user,
             title="Old class",
             event_type=Event.CLASS,
             date=timezone.localdate(),
@@ -358,6 +388,7 @@ class PageTests(TestCase):
 
     def test_delete_class_can_remove_selected_course_work(self):
         event = Event.objects.create(
+            user=self.user,
             title="Intro to Management",
             event_type=Event.CLASS,
             date=timezone.localdate(),
@@ -365,6 +396,7 @@ class PageTests(TestCase):
             end_time=time(10, 0),
         )
         task = AcademicTask.objects.create(
+            user=self.user,
             title="Reflection",
             course="MGT 100",
             due_date=timezone.now() + timedelta(days=2),
@@ -385,6 +417,7 @@ class PageTests(TestCase):
 
     def test_remove_entire_course_after_class_event_is_gone(self):
         task = AcademicTask.objects.create(
+            user=self.user,
             title="Reflection",
             course="MGT 100",
             due_date=timezone.now() + timedelta(days=2),

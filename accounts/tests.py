@@ -1,4 +1,8 @@
+import re
+from unittest import mock
+
 from django.conf import settings
+from django.core import mail
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -32,21 +36,61 @@ class LoginFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Please enter a correct username and password")
 
-    def test_signup_creates_account_and_logs_in(self):
-        response = self.client.post(
-            reverse("signup"),
-            {"username": "newbie", "password1": "Tr1cky-horse-9", "password2": "Tr1cky-horse-9"},
-        )
-        self.assertRedirects(response, self.home, fetch_redirect_response=False)
-        self.assertTrue(User.objects.filter(username="newbie").exists())
-        self.assertEqual(self.client.get(self.home).status_code, 200)
+    def signup(self, password="Tr1cky-horse-9", **extra):
+        data = {"username": "newbie", "school_email": "newbie@assumption.edu", "role": "student",
+                "password1": password, "password2": password, **extra}
+        return self.client.post(reverse("signup"), data)
+
+    def test_signup_emails_a_verification_link_then_activates(self):
+        response = self.signup()
+        self.assertRedirects(response, reverse("verification_sent"), fetch_redirect_response=False)
+        user = User.objects.get(username="newbie")
+        self.assertFalse(user.is_active)
+
+        page = self.client.get(reverse("verification_sent"))
+        self.assertContains(page, "newbie@assumption.edu")
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["newbie@assumption.edu"])
+        link = re.search(r"https?://\S+", mail.outbox[0].body).group(0)
+        self.assertRedirects(self.client.get(link), reverse("login"), fetch_redirect_response=False)
+
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
+        self.assertTrue(user.profile.is_verified_student)
+        self.assertTrue(self.client.login(username="newbie", password="Tr1cky-horse-9"))
+
+    def test_second_click_on_verification_link_says_already_verified(self):
+        self.signup()
+        link = re.search(r"https?://\S+", mail.outbox[0].body).group(0)
+        self.client.get(link)
+        response = self.client.get(link, follow=True)
+        self.assertContains(response, "already verified")
+
+    def test_bad_verification_link_shows_friendly_page(self):
+        response = self.client.get(reverse("verify_email", args=["Mg", "bad-token"]))
+        self.assertContains(response, "That link didn't work")
 
     def test_signup_rejects_weak_password(self):
-        response = self.client.post(
-            reverse("signup"), {"username": "weak", "password1": "12345678", "password2": "12345678"}
-        )
+        response = self.signup(password="12345678")
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(User.objects.filter(username="weak").exists())
+        self.assertFalse(User.objects.filter(username="newbie").exists())
+
+    def test_signup_undone_when_email_cannot_be_sent(self):
+        with mock.patch("accounts.views.send_mail", side_effect=OSError("smtp down")):
+            response = self.signup()
+        self.assertContains(response, "couldn&#x27;t send the verification email")
+        self.assertFalse(User.objects.filter(username="newbie").exists())
+
+    def test_password_reset_uses_app_pages_and_sends_email(self):
+        User.objects.filter(username="alex").update(email="alex@assumption.edu")
+        page = self.client.get(reverse("password_reset"))
+        self.assertContains(page, "Forgot your password?")
+        self.assertNotContains(page, "Django administration")
+        response = self.client.post(reverse("password_reset"), {"email": "alex@assumption.edu"})
+        self.assertRedirects(response, reverse("password_reset_done"), fetch_redirect_response=False)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("/accounts/reset/", mail.outbox[0].body)
 
     def test_logout_needs_post_and_ends_session(self):
         self.client.login(username="alex", password=PASSWORD)

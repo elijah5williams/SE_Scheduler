@@ -15,11 +15,6 @@ urlpatterns = [
     path("signup/", views.signup, name="signup"),
     path("verify/<uidb64>/<token>/", views.verify_email, name="verify_email"),
     path(
-        "verification-sent/",
-        TemplateView.as_view(template_name="registration/verification_sent.html"),
-        name="verification_sent",
-    ),
-    path(
         "password-reset/",
         auth_views.PasswordResetView.as_view(),
         name="password_reset",
