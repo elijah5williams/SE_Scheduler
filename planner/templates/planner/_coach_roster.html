@@ -1,0 +1,43 @@
+<section class="roster-block" aria-label="{{ team.name }} roster">
+  <div class="roster-bar">
+    <h3>Roster<span>{{ team.athletes.count }}</span></h3>
+    {% if team.athletes.all %}
+      <input class="roster-search" type="search" placeholder="Search athletes" aria-label="Search {{ team.name }} athletes" data-roster-search="roster-{{ team.pk }}">
+    {% endif %}
+  </div>
+  {% if team.athletes.all %}
+    <ul class="roster-grid" id="roster-{{ team.pk }}">
+      {% for athlete in team.athletes.all|dictsort:"first_name"|dictsort:"last_name" %}
+        <li class="athlete" data-search="{{ athlete.get_full_name|lower }} {{ athlete.email|lower }} {{ athlete.username|lower }}">
+          <span class="avatar" aria-hidden="true">{% if athlete.first_name %}{{ athlete.first_name|slice:":1"|upper }}{{ athlete.last_name|slice:":1"|upper }}{% else %}{{ athlete.username|slice:":2"|upper }}{% endif %}</span>
+          <span class="athlete-text">
+            <span class="athlete-name">{{ athlete.get_full_name|default:athlete.username }}</span>
+            <span class="athlete-email">{{ athlete.email|default:athlete.username }}</span>
+          </span>
+        </li>
+      {% endfor %}
+    </ul>
+    <p class="roster-empty" id="roster-{{ team.pk }}-none" hidden>No athletes match that search.</p>
+  {% else %}
+    <p class="roster-empty">No athletes yet. Share the join code above.</p>
+  {% endif %}
+</section>
+
+<script>
+  if (!window.rosterSearchReady) { window.rosterSearchReady = true;
+  document.querySelectorAll("[data-roster-search]").forEach(function (input) {
+    var list = document.getElementById(input.dataset.rosterSearch);
+    var none = document.getElementById(input.dataset.rosterSearch + "-none");
+    input.addEventListener("input", function () {
+      var q = input.value.trim().toLowerCase();
+      var shown = 0;
+      list.querySelectorAll(".athlete").forEach(function (item) {
+        var match = !q || item.dataset.search.indexOf(q) !== -1;
+        item.hidden = !match;
+        if (match) shown++;
+      });
+      none.hidden = shown !== 0;
+    });
+  });
+  }
+</script>

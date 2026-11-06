@@ -1,0 +1,16 @@
+{% if team.staff.all %}
+  <section class="staff-block" aria-label="{{ team.name }} coaching staff">
+    <h3>Coaching staff<span>{{ team.staff.all|length }}</span></h3>
+    <ul class="staff-grid">
+      {% for member in team.staff.all %}
+        <li class="staff-card{% if member.user_id == team.coach_id %} head{% endif %}">
+          <span class="avatar" aria-hidden="true">{% if member.user.first_name %}{{ member.user.first_name|slice:":1"|upper }}{{ member.user.last_name|slice:":1"|upper }}{% else %}{{ member.user.username|slice:":2"|upper }}{% endif %}</span>
+          <span class="athlete-text">
+            <span class="athlete-name">{{ member.user.get_full_name|default:member.user.username }}{% if member.user == request.user %}<span class="you-tag">(you)</span>{% endif %}</span>
+            <span class="staff-title">{{ member.title }}</span>
+          </span>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endif %}

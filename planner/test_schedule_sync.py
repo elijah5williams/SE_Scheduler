@@ -118,3 +118,33 @@ class AssignTests(TestCase):
         )
         self.assertEqual(response.status_code, 302)
         self.assertTrue(Event.objects.filter(user=athlete, title="Practice", assignment__team=team).exists())
+
+
+class CoachPagesTests(TestCase):
+    def setUp(self):
+        self.coach = User.objects.create_user("coach", password="pw", first_name="Hal", last_name="Head")
+        self.coach.profile.role = self.coach.profile.verified_role = Profile.COACH
+        self.coach.profile.verification_status = Profile.VERIFIED
+        self.coach.profile.save()
+        self.team = Team.objects.create(name="Assumption Football", coach=self.coach)
+        StaffMember.objects.create(team=self.team, user=self.coach, title="Head Coach")
+        self.team.athletes.add(User.objects.create_user("sray", first_name="Sam", last_name="Ray"))
+        self.client.login(username="coach", password="pw")
+
+    def test_each_section_has_its_own_page(self):
+        pages = {
+            "planner:coach_dashboard": ("Team schedule", "Sam Ray"),
+            "planner:coach_roster": ("Sam Ray", "Coaching staff<"),
+            "planner:coach_staff": ("Head Coach", "Sam Ray"),
+            "planner:coach_schedule": ("Team schedule", "Sam Ray"),
+        }
+        for name, (shown, hidden) in pages.items():
+            response = self.client.get(reverse(name))
+            self.assertEqual(response.status_code, 200, name)
+            self.assertContains(response, shown, msg_prefix=name)
+            self.assertNotContains(response, hidden, msg_prefix=name)
+
+    def test_athletes_cannot_open_coach_pages(self):
+        User.objects.create_user("athlete", password="pw")
+        self.client.login(username="athlete", password="pw")
+        self.assertRedirects(self.client.get(reverse("planner:coach_roster")), reverse("planner:dashboard"), fetch_redirect_response=False)

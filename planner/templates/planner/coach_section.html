@@ -1,0 +1,19 @@
+{% extends "planner/base.html" %}
+{% block content %}
+<header class="coach-page-head">
+  <p class="eyebrow">{{ eyebrow }}</p>
+  <h1>{{ page_title }}</h1>
+  <p>{{ intro }}</p>
+</header>
+
+{% for team in teams %}
+  <article class="team-card">
+    {% include "planner/_coach_team_head.html" %}
+    {% include section_template %}
+  </article>
+{% empty %}
+  <article class="team-card">
+    <p class="empty">You don't have a team yet. <a href="{% url 'planner:team_create' %}">Create one</a> to get started.</p>
+  </article>
+{% endfor %}
+{% endblock %}

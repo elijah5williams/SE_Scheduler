@@ -26,28 +26,3 @@ if (repeatCheckbox && repeatUntilField && weekdaysField) {
     syncRepeatField();
 }
 
-// Live countdown to the next game on the game-day panel.
-document.querySelectorAll(".gh-countdown[data-kickoff]").forEach((box) => {
-    const kickoff = new Date(box.dataset.kickoff).getTime();
-    if (Number.isNaN(kickoff)) return;
-    const cells = {};
-    box.querySelectorAll("[data-unit]").forEach((el) => { cells[el.dataset.unit] = el; });
-    const tick = () => {
-        let left = Math.max(0, Math.floor((kickoff - Date.now()) / 1000));
-        if (left === 0) {
-            // Kickoff: reload once so the panel switches to "Live now".
-            clearInterval(timer);
-            setTimeout(() => window.location.reload(), 1500);
-        }
-        const d = Math.floor(left / 86400); left -= d * 86400;
-        const h = Math.floor(left / 3600); left -= h * 3600;
-        const m = Math.floor(left / 60);
-        const s = left - m * 60;
-        cells.d.textContent = d;
-        cells.h.textContent = String(h).padStart(2, "0");
-        cells.m.textContent = String(m).padStart(2, "0");
-        cells.s.textContent = String(s).padStart(2, "0");
-    };
-    const timer = setInterval(tick, 1000);
-    tick();
-});
