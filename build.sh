@@ -15,6 +15,9 @@ fi
 # New accounts get ROSTER_PASSWORD; people who already exist keep their password.
 python manage.py sync_athletics --password "${ROSTER_PASSWORD:-greyhounds}" || echo "Athletics sync failed; schedules still refresh when people open the site."
 
+# Latest news photos for the login page (also refreshed in the background every few hours).
+python manage.py shell -c "from planner.photos import refresh_photos; print('Login photos:', refresh_photos())" || true
+
 # Optional extra roster from a Render "Secret File" (e.g. corrections), kept off GitHub.
 if [ -f /etc/secrets/football.csv ]; then
   python manage.py import_roster /etc/secrets/football.csv --password "${ROSTER_PASSWORD:-greyhounds}"

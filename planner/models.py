@@ -490,3 +490,18 @@ class Assignment(models.Model):
 
     def sync_events(self):
         self.events.update(**self._event_fields())
+
+class AthleticsPhoto(models.Model):
+    """Recent news photos from the athletics website, shown on the login page."""
+
+    image_url = models.URLField(max_length=500)
+    title = models.CharField(max_length=300)
+    link = models.URLField(max_length=500)
+    position = models.PositiveSmallIntegerField(default=0)
+    fetched_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["position"]
+
+    def __str__(self):
+        return self.title

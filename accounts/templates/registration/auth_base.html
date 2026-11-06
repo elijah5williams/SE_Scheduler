@@ -2,7 +2,7 @@
   Shared layout for the login and sign-up pages: a split card (landscape panel + form)
   floating on a soft sky background. Self-contained (inline CSS, system fonts).
 {% endcomment %}
-<!DOCTYPE html>
+{% load athletics %}<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -84,6 +84,19 @@
     .dots button { width: 22px; height: 4px; padding: 0; border: 0; border-radius: 3px; background: rgba(255, 255, 255, .4); cursor: pointer; transition: width .3s, background .3s; }
     .dots button.on { width: 34px; background: #fff; }
 
+    /* Live news photos from the athletics site */
+    .photos { position: absolute; inset: 0; }
+    .photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.06); transition: opacity 1.2s ease, transform 7s ease; }
+    .photo.on { opacity: 1; transform: scale(1); }
+    .shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6, 18, 40, .55) 0%, rgba(6, 18, 40, 0) 26%, rgba(6, 18, 40, 0) 48%, rgba(6, 18, 40, .88) 100%); }
+    .photo-caption { text-align: left; }
+    .news-tag { display: inline-block; margin-bottom: 10px; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .25); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; backdrop-filter: blur(6px); }
+    .photo-caption .slides { height: 96px; }
+    .photo-caption .slide { color: #fff; font-size: 22px; font-weight: 600; line-height: 1.3; text-decoration: none; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; pointer-events: none; }
+    .photo-caption .slide.on { pointer-events: auto; }
+    .photo-caption .slide:hover { text-decoration: underline; }
+    .photo-caption .dots { justify-content: flex-start; }
+
     /* Right: form */
     .form-side { display: flex; align-items: center; justify-content: center; padding: 40px 34px; }
     .form-inner { width: 100%; max-width: 400px; }
@@ -162,6 +175,11 @@
       .caption { bottom: 18px; }
       .slides { height: 34px; }
       .slide { font-size: 18px; }
+      .art:has(.photos) { min-height: 250px; }
+      .shade { background: linear-gradient(180deg, rgba(6, 18, 40, .6) 0%, rgba(6, 18, 40, .15) 35%, rgba(6, 18, 40, .9) 100%); }
+      .photo-caption .slides { height: 50px; }
+      .photo-caption .slide { font-size: 15px; -webkit-line-clamp: 2; }
+      .news-tag { display: none; }
       .slide br { display: none; }
       .dots { margin-top: 8px; }
       .form-side { padding: 22px 12px 18px; }
@@ -193,25 +211,45 @@
           <a class="pill" href="https://assumptiongreyhounds.com" target="_blank" rel="noopener">Athletics site &rarr;</a>
         </div>
 
-        <svg class="land" viewBox="0 0 600 420" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M0 150 C120 80 240 30 335 60 C430 90 520 175 600 150 L600 420 L0 420Z" fill="#1d4b93"/>
-          <path d="M335 60 C430 90 520 175 600 150" stroke="#a9cdf5" stroke-width="2" fill="none" opacity=".75"/>
-          <path d="M0 235 C150 165 280 140 385 182 C475 218 545 262 600 248 L600 420 L0 420Z" fill="#163b78"/>
-          <path d="M0 320 C170 268 320 270 440 300 C520 320 570 335 600 330 L600 420 L0 420Z" fill="#0f2c5c"/>
-        </svg>
-
-        <div class="caption">
-          <div class="slides" aria-live="polite">
-            <p class="slide on">School. Sport. <br>Success.</p>
-            <p class="slide">Every Greyhound team, <br>live in one place.</p>
-            <p class="slide">Study time that fits <br>around practice.</p>
+        {% login_photos as photos %}
+        {% if photos %}
+          <div class="photos" aria-hidden="true">
+            {% for photo in photos %}
+              <img class="photo{% if forloop.first %} on{% endif %}" src="{{ photo.image_url }}" alt="" {% if not forloop.first %}loading="lazy"{% endif %} onerror="this.remove()">
+            {% endfor %}
           </div>
-          <div class="dots" role="tablist" aria-label="Highlights">
-            <button type="button" class="on" aria-label="Highlight 1"></button>
-            <button type="button" aria-label="Highlight 2"></button>
-            <button type="button" aria-label="Highlight 3"></button>
+          <div class="shade" aria-hidden="true"></div>
+          <div class="caption photo-caption">
+            <span class="news-tag">Latest from Greyhound athletics</span>
+            <div class="slides" aria-live="polite">
+              {% for photo in photos %}
+                <a class="slide{% if forloop.first %} on{% endif %}" href="{{ photo.link }}" target="_blank" rel="noopener">{{ photo.title }}</a>
+              {% endfor %}
+            </div>
+            <div class="dots" role="tablist" aria-label="News photos">
+              {% for photo in photos %}<button type="button" {% if forloop.first %}class="on" {% endif %}aria-label="Photo {{ forloop.counter }}"></button>{% endfor %}
+            </div>
           </div>
-        </div>
+        {% else %}
+          <svg class="land" viewBox="0 0 600 420" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0 150 C120 80 240 30 335 60 C430 90 520 175 600 150 L600 420 L0 420Z" fill="#1d4b93"/>
+            <path d="M335 60 C430 90 520 175 600 150" stroke="#a9cdf5" stroke-width="2" fill="none" opacity=".75"/>
+            <path d="M0 235 C150 165 280 140 385 182 C475 218 545 262 600 248 L600 420 L0 420Z" fill="#163b78"/>
+            <path d="M0 320 C170 268 320 270 440 300 C520 320 570 335 600 330 L600 420 L0 420Z" fill="#0f2c5c"/>
+          </svg>
+          <div class="caption">
+            <div class="slides" aria-live="polite">
+              <p class="slide on">School. Sport. <br>Success.</p>
+              <p class="slide">Every Greyhound team, <br>live in one place.</p>
+              <p class="slide">Study time that fits <br>around practice.</p>
+            </div>
+            <div class="dots" role="tablist" aria-label="Highlights">
+              <button type="button" class="on" aria-label="Highlight 1"></button>
+              <button type="button" aria-label="Highlight 2"></button>
+              <button type="button" aria-label="Highlight 3"></button>
+            </div>
+          </div>
+        {% endif %}
       </section>
 
       <main class="form-side">
@@ -238,20 +276,21 @@
       });
     });
 
-    // Rotating captions on the landscape panel
+    // Rotating photos and captions on the left panel
     (function () {
       var slides = document.querySelectorAll(".slide");
       var dots = document.querySelectorAll(".dots button");
+      var photos = document.querySelectorAll(".photo");
       if (!slides.length) return;
       var current = 0, timer;
-      function show(i) {
-        slides[current].classList.remove("on"); dots[current].classList.remove("on");
-        current = i;
-        slides[current].classList.add("on"); dots[current].classList.add("on");
+      function toggle(i, on) {
+        slides[i].classList.toggle("on", on); dots[i].classList.toggle("on", on);
+        if (photos[i]) photos[i].classList.toggle("on", on);
       }
+      function show(i) { toggle(current, false); current = i; toggle(current, true); }
       function start() {
         if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-        timer = setInterval(function () { show((current + 1) % slides.length); }, 5000);
+        timer = setInterval(function () { show((current + 1) % slides.length); }, 6000);
       }
       dots.forEach(function (dot, i) {
         dot.addEventListener("click", function () { clearInterval(timer); show(i); start(); });
