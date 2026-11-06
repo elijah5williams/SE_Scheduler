@@ -81,3 +81,21 @@ class ImportRosterTests(TestCase):
         self.client.login(username=coach.username, password="pw-12345")
         response = self.client.get(reverse("planner:coach_dashboard"))
         self.assertContains(response, "Assumption Football")
+
+    def test_password_option_sets_password_for_everyone(self):
+        self.run_import("Sam,Ray,sray@assumption.edu,athlete,Football\n")
+        self.run_import(
+            "Sam,Ray,sray@assumption.edu,athlete,Football\n"
+            "Pat,Lee,plee@assumption.edu,coach,Football\n",
+            "--password", "greyhounds",
+        )
+        for user in User.objects.all():
+            self.assertTrue(user.check_password("greyhounds"), user.email)
+        self.assertTrue(self.client.login(username="plee", password="greyhounds"))
+
+    def test_password_and_invites_cannot_be_combined(self):
+        with self.assertRaises(CommandError):
+            self.run_import(
+                "Sam,Ray,sray@assumption.edu,athlete,Football\n",
+                "--password", "greyhounds", "--send-invites",
+            )

@@ -54,6 +54,11 @@ class Command(BaseCommand):
             help="Email each new account a link to set their password.",
         )
         parser.add_argument(
+            "--password",
+            help="Give every account on the roster this password, so they can log in right away "
+            "(handy for demos). Existing accounts on the roster are reset to it too.",
+        )
+        parser.add_argument(
             "--allow-other-domains",
             action="store_true",
             help=f"Accept emails that are not @{SCHOOL_DOMAIN}.",
@@ -64,7 +69,12 @@ class Command(BaseCommand):
             help="Check the file and report what would happen without saving anything.",
         )
 
-    def handle(self, *args, csv_path, send_invites, allow_other_domains, dry_run, **options):
+    def handle(self, *args, csv_path, send_invites, allow_other_domains, dry_run, password=None, **options):
+        if password is not None and not password.strip():
+            raise CommandError("--password cannot be blank.")
+        if password and send_invites:
+            raise CommandError("Use either --password or --send-invites, not both.")
+        self.password = password
         rows = self._read_rows(csv_path, allow_other_domains)
 
         stats = {"users_created": 0, "users_existing": 0, "teams_created": 0}
@@ -87,7 +97,12 @@ class Command(BaseCommand):
                 f"{stats['users_existing']} already existed, {stats['teams_created']} team(s) created."
             )
         )
-        if new_users and not send_invites and not dry_run:
+        if self.password and not dry_run:
+            self.stdout.write(
+                "Everyone on the roster can now log in with their username "
+                "(the part of their email before the @) and the password you chose."
+            )
+        elif new_users and not send_invites and not dry_run:
             self.stdout.write(
                 "New accounts have no password yet. Re-run with --send-invites, or have people use "
                 "'Forgot password' on the login page with their school email."
@@ -148,6 +163,10 @@ class Command(BaseCommand):
             new_users.append(user)
         else:
             stats["users_existing"] += 1
+
+        if self.password and not user.check_password(self.password):
+            user.set_password(self.password)
+            user.save(update_fields=["password"])
 
         profile = user.profile
         if profile.role != Profile.COACH:  # a coach listed on two teams stays a coach

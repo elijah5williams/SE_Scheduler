@@ -98,6 +98,14 @@ Instead of everyone signing up one by one, you can create every athlete and coac
    python manage.py import_roster rosters/my_roster.csv --send-invites
    ```
 
+   For a class demo, skip the emails and give every account the same password instead:
+
+   ```bash
+   python manage.py import_roster rosters/my_roster.csv --password greyhounds
+   ```
+
+   Everyone can then log in with their username (the part of their email before the `@`, such as `jane.doe`) and that password. Running it again with `--password` resets everyone on the roster to the new password.
+
 Accounts are created already verified, because the roster replaces the email and admin checks. The first coach listed for a sport becomes that team's coach. Athletes are added to the team and receive any plans the coach has already assigned. You can run the command again with an updated roster: existing people and teams are reused, not duplicated. Teams can be reviewed or edited under **Teams** in the Django admin.
 
 Keep real rosters out of git, because they contain student information. `rosters/*.csv` is ignored, except for the template.
