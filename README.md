@@ -124,6 +124,19 @@ That puts every game on every athlete's schedule. After that the app keeps itsel
 
 The dashboards show a game-day panel with a live countdown to the next game, both teams' logos, the latest scores and the season record (Overall, Conf, Streak, Home, Away and so on). Games from the website show "From website" on the coach dashboard instead of Edit and Delete, because the next sync would overwrite any changes.
 
+## Put the site online (Render)
+
+The repo includes `render.yaml`, which sets up the website and a free Postgres database on [Render](https://render.com). Every push to `main` redeploys the site.
+
+1. Sign in to Render with GitHub, then choose **New + → Blueprint** and pick this repository.
+2. Render asks for these values. Fill them in, then click **Apply**:
+   - `ROSTER_PASSWORD`: the password every roster account gets, e.g. `greyhounds`
+   - `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD`: your login for `/admin`
+3. To load the roster without putting student information on GitHub, open the **se-scheduler** service, go to **Environment → Secret Files**, add a file named `football.csv` and paste in the roster. Then click **Manual Deploy → Deploy latest commit**. Each deploy imports the roster and links the football schedule.
+4. Your site is at the `https://se-scheduler-….onrender.com` address shown at the top of the service page.
+
+On the free plan the site sleeps after a while without visitors, so the first visit afterwards takes about 30 seconds.
+
 ## Run the tests
 
 ```bash

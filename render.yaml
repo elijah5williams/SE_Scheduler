@@ -1,0 +1,32 @@
+# Render Blueprint: creates the website and its database together.
+# In Render: New + -> Blueprint -> pick this GitHub repo.
+services:
+  - type: web
+    name: se-scheduler
+    runtime: python
+    plan: free
+    branch: main
+    buildCommand: ./build.sh
+    startCommand: gunicorn se_scheduler.wsgi:application
+    healthCheckPath: /accounts/login/
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: se-scheduler-db
+          property: connectionString
+      - key: ROSTER_PASSWORD
+        sync: false
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+
+databases:
+  - name: se-scheduler-db
+    plan: free
