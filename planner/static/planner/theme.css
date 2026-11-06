@@ -1,0 +1,164 @@
+/*
+  App theme matching the login page: light sky background, a floating dark sidebar
+  (like the login's photo panel), frosted-glass cards and charcoal primary buttons.
+  Loaded after styles.css and coach.css, so it only overrides looks, not layout logic.
+*/
+:root {
+    --glass: rgba(255, 255, 255, .72);
+    --glass-strong: rgba(255, 255, 255, .86);
+    --glass-line: rgba(255, 255, 255, .9);
+    --sky-shadow: 0 24px 60px rgba(31, 79, 128, .14);
+    --charcoal-1: #3b414d;
+    --charcoal-2: #14171d;
+    --line: #dfe6ee;
+    --radius: 22px;
+}
+
+body {
+    background: linear-gradient(180deg, #8cc4ee 0%, #b7dcf6 30%, #e3f1fb 62%, #f5fafe 100%) fixed;
+}
+body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 0;
+    background:
+        radial-gradient(closest-side, rgba(255, 255, 255, .85), transparent) -10% 105% / 60% 45% no-repeat,
+        radial-gradient(closest-side, rgba(255, 255, 255, .8), transparent) 110% 100% / 55% 40% no-repeat;
+}
+.app-shell { position: relative; z-index: 1; }
+
+/* Sidebar: a floating dark panel, like the login photo panel */
+@media (min-width: 1081px) {
+    .app-shell { grid-template-columns: 268px minmax(0, 1fr); }
+    .sidebar {
+        top: 14px;
+        height: calc(100vh - 28px);
+        margin: 14px 0 14px 14px;
+        border-radius: 24px;
+        box-shadow: 0 24px 60px rgba(10, 34, 64, .28);
+    }
+}
+.sidebar {
+    background:
+        radial-gradient(120% 60% at 0% 0%, rgba(31, 95, 191, .35), transparent 60%),
+        linear-gradient(180deg, #0f2c5c 0%, #0a2240 55%, #081a33 100%);
+}
+.brand-mark { background: #fff; color: var(--navy); box-shadow: 0 6px 16px rgba(0, 0, 0, .2); }
+.main-nav a { border-radius: 13px; }
+.main-nav a:hover, .main-nav a.active { background: rgba(255, 255, 255, .12); }
+.main-nav a.active { box-shadow: inset 3px 0 #fff; }
+.nav-icon { color: #a9cdf5; }
+.sidebar-card { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .14); border-radius: 18px; }
+
+/* Top bar: frosted glass */
+.topbar {
+    background: rgba(255, 255, 255, .55);
+    border-bottom: 1px solid rgba(255, 255, 255, .8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+.topbar-date { color: #3e4c60; }
+
+/* Buttons: charcoal primary, white secondary (same as the login page) */
+.button { border-radius: 13px; }
+.button-primary, .coach-btn.green {
+    background: linear-gradient(180deg, var(--charcoal-1), var(--charcoal-2)) !important;
+    color: #fff !important;
+    box-shadow: 0 10px 22px rgba(20, 23, 29, .22), inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+.button-primary:hover, .coach-btn.green:hover { background: linear-gradient(180deg, #4a515f, #1b1f27) !important; }
+.button-ghost, .button-light, .coach-btn, .coach-btn.ghost {
+    background: #fff;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    box-shadow: 0 2px 8px rgba(31, 79, 128, .08);
+}
+.panel-header > a.button-primary, .panel-header > .routine-add-button, .panel-header > .schedule-add-button { color: #fff !important; }
+
+/* Cards: frosted glass on the sky */
+.panel, .stat-card, .day-column, .team-card, .tile, .sched, .events, .roster-grid .athlete, .staff-card, .commitment-row, .tip-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-line);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+.panel, .team-card { border-radius: 24px; box-shadow: var(--sky-shadow); }
+.stat-card, .tile { border-radius: 20px; box-shadow: 0 10px 30px rgba(31, 79, 128, .08); }
+.day-column { border-radius: 18px; }
+.day-column > header { background: rgba(255, 255, 255, .55); }
+.day-column.today > header { background: linear-gradient(180deg, var(--charcoal-1), var(--charcoal-2)); color: #fff; }
+.sched-row, .event-row { border-top-color: rgba(214, 224, 235, .8); }
+.sched-row.is-next { background: rgba(253, 248, 238, .85); }
+.roster-grid .athlete, .staff-card { background: rgba(255, 255, 255, .8); }
+.staff-card.head { background: rgba(253, 248, 238, .9); }
+
+/* Inputs: soft filled fields like the login form */
+.field input:not([type="checkbox"]):not([type="radio"]), .field select, .field textarea, .roster-search {
+    background: #eef2f6;
+    border: 1px solid transparent;
+    border-radius: 13px;
+}
+.field input:focus, .field select:focus, .field textarea:focus, .roster-search:focus {
+    background: #fff;
+    border-color: #b9cbe3;
+    box-shadow: 0 0 0 4px rgba(31, 95, 191, .12);
+    outline: none;
+}
+
+/* Messages */
+.message { background: rgba(227, 246, 239, .92); border-color: #c4ebdc; border-radius: 14px; backdrop-filter: blur(10px); }
+
+/* Hero banners with live athletics photos behind them */
+.hero, .planner-hero, .coach-hero { position: relative; overflow: hidden; isolation: isolate; border-radius: 26px; }
+.hero::after, .planner-hero::after { display: none; }
+.hero-photos { position: absolute; inset: 0; z-index: -1; }
+.hero-photos .hp { position: absolute; inset: 0; opacity: 0; transition: opacity 1.4s ease; }
+.hero-photos .hp.on { opacity: 1; }
+.hero-photos img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 35%; }
+.hero-photos::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, rgba(8, 26, 51, .92) 0%, rgba(8, 26, 51, .72) 45%, rgba(8, 26, 51, .25) 100%);
+}
+.hero-credit {
+    position: absolute; right: 18px; bottom: 14px; z-index: 1;
+    max-width: 46%; padding: 6px 12px; border-radius: 999px;
+    background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .25);
+    color: #fff !important; font-size: 12px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    backdrop-filter: blur(6px); text-decoration: none;
+}
+.hero-credit:hover { background: rgba(255, 255, 255, .26); }
+@media (max-width: 720px) {
+    .hero-credit { display: none; }
+    .hero-photos::after { background: linear-gradient(180deg, rgba(8, 26, 51, .55), rgba(8, 26, 51, .9)); }
+}
+
+/* Real Greyhounds logo in the sidebar badge (letter shows if the image can't load) */
+.brand-logo { position: relative; overflow: hidden; }
+.brand-logo img { position: absolute; inset: 5px; width: calc(100% - 10px); height: calc(100% - 10px); object-fit: contain; background: #fff; }
+
+/* Keep hero text readable over busy photos */
+.hero-photos::after {
+    background:
+        linear-gradient(90deg, rgba(8, 26, 51, .96) 0%, rgba(8, 26, 51, .86) 42%, rgba(8, 26, 51, .35) 78%, rgba(8, 26, 51, .2) 100%),
+        linear-gradient(0deg, rgba(8, 26, 51, .35), transparent 40%);
+}
+.coach-hero p, .hero p { color: #d7e1ee !important; opacity: 1 !important; }
+.coach-hero .coach-btn { color: var(--navy); }
+
+/* Game-day banner */
+.gameday {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 18px; padding: 12px 18px 12px 12px;
+    border-radius: 18px; text-decoration: none; color: #fff;
+    background: linear-gradient(100deg, #0f2c5c, #1f5fbf);
+    box-shadow: 0 14px 34px rgba(31, 79, 128, .25);
+}
+.gameday:hover { filter: brightness(1.05); }
+.gameday-logo { position: relative; flex: none; width: 46px; height: 46px; border-radius: 50%; background: #fff; display: grid; place-items: center; overflow: hidden; color: var(--navy); font-weight: 800; }
+.gameday-logo img { position: absolute; inset: 6px; width: calc(100% - 12px); height: calc(100% - 12px); object-fit: contain; background: #fff; }
+.gameday-text { min-width: 0; flex: 1; }
+.gameday-text strong { display: flex; align-items: center; gap: 8px; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gameday-text > span { display: block; color: #cfe0f5; font-size: 13px; }
+.gameday-when { flex: none; padding: 6px 12px; border-radius: 999px; background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .28); font-weight: 800; font-size: 13px; }
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff5a4f; display: inline-block; animation: gh-pulse 1.6s infinite; }

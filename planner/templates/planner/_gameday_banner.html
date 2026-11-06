@@ -1,0 +1,16 @@
+{% comment %}Game-day banner. Expects `hub` from game_hub(); renders only on a day with a game.{% endcomment %}
+{% with g=hub.today_game %}{% if g %}
+<a class="gameday" href="{% if user.profile.role == 'coach' %}{% url 'planner:coach_schedule' %}{% else %}{% url 'planner:schedule' %}{% endif %}">
+  <span class="gameday-logo">{% if g.opponent_logo %}<img src="{{ g.opponent_logo }}" alt="" onerror="this.remove()">{% endif %}<span>{{ g.opponent|slice:":1" }}</span></span>
+  <span class="gameday-text">
+    <strong>{% if g.result %}Final{% elif g.is_live %}<i class="live-dot"></i>Live now{% else %}Game day{% endif %} · {{ hub.sport }} {{ g.matchup_word }} {{ g.opponent }}</strong>
+    <span>
+      {% if g.result %}{% if g.outcome %}{{ g.outcome }} {{ g.score }}{% else %}{{ g.result }}{% endif %}
+      {% else %}{% if g.time_tba %}Time TBA{% else %}{{ g.start_time|time:"g:i A" }}{% endif %}{% if g.location %} · {{ g.location }}{% endif %}{% endif %}
+    </span>
+  </span>
+  {% if not g.result and not g.is_live and not g.time_tba %}
+    <span class="gameday-when">{{ g.until }}</span>
+  {% endif %}
+</a>
+{% endif %}{% endwith %}

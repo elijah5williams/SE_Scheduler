@@ -3,6 +3,8 @@
 {% block title %}My Schedule · Athlete Academic Assistant{% endblock %}
 
 {% block content %}
+{% for team in teams %}{% if team.hub %}{% with hub=team.hub %}{% include "planner/_gameday_banner.html" %}{% endwith %}{% endif %}{% endfor %}
+
 <div class="page-heading">
     <div><span class="eyebrow">One schedule</span><h1>Academics meet athletics.</h1><p>Your next seven days of classes, training, competition, and protected study time.</p></div>
     <a class="button button-primary" href="{% url 'planner:event_create' %}">+ Add commitment</a>

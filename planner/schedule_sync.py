@@ -9,6 +9,8 @@ import json
 import logging
 import re
 import ssl
+import sys
+import threading
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
@@ -226,8 +228,28 @@ def sync_team(team, page=None):
     return counts
 
 
-def sync_if_stale(teams):
-    """Quietly refresh any of these teams not synced in the last hour. Never raises."""
+def _sync_in_background(team_ids):
+    from django.db import connection
+
+    try:
+        for team in Team.objects.filter(pk__in=team_ids):
+            try:
+                sync_team(team, page=fetch(team.schedule_url, timeout=8))
+            except Exception:
+                logger.warning("Schedule sync failed for %s", team, exc_info=True)
+    finally:
+        connection.close()
+
+
+def sync_if_stale(teams, background=None):
+    """
+    Refresh any of these teams not synced in the last hour (10 minutes on game day). Never raises.
+    By default the download runs in a background thread so pages don't wait on the athletics site;
+    the fresh scores show on the next page load.
+    """
+    if background is None:
+        background = not _running_tests()
+    due = []
     now = timezone.now()
     today = timezone.localdate()
     for team in teams:
@@ -240,10 +262,17 @@ def sync_if_stale(teams):
         # After a failed try, wait 10 minutes before trying again so pages stay fast.
         if not cache.add(f"schedule-sync-attempt-{team.pk}", True, timeout=600):
             continue
-        try:
-            sync_team(team, page=fetch(team.schedule_url, timeout=5))
-        except Exception:
-            logger.warning("Schedule sync failed for %s", team, exc_info=True)
+        due.append(team.pk)
+    if not due:
+        return
+    if background:
+        threading.Thread(target=_sync_in_background, args=(due,), daemon=True).start()
+    else:
+        _sync_in_background(due)
+
+
+def _running_tests():
+    return "test" in sys.argv[1:2]
 
 
 def game_hub(team, now=None):
@@ -257,6 +286,12 @@ def game_hub(team, now=None):
     live = next((g for g in games if g.kickoff <= now < g.final_whistle and not g.result and not g.time_tba), None)
     upcoming = [g for g in games if g.kickoff > now and not g.result]
     played = [g for g in games if g.result and not g.is_cancelled]
+    today_game = next((g for g in games if g.date == now.date() and not g.is_cancelled), None)
+    if today_game:
+        today_game.is_live = today_game is live
+        minutes = max(0, int((today_game.kickoff - now).total_seconds() // 60))
+        hours = round(minutes / 60)
+        today_game.until = f"in {minutes} min" if minutes < 60 else f"in {hours} hr{'s' if hours != 1 else ''}"
     scored = any(g.outcome for g in played) or not played and any(g.is_home is not None for g in games)
     return {
         "team": team,
@@ -264,6 +299,7 @@ def game_hub(team, now=None):
         "event_word": "game" if scored else "event",
         "results_word": "scores" if scored else "results",
         "live_game": live,
+        "today_game": today_game,
         "next_game": upcoming[0] if upcoming else None,
         "recent": list(reversed(played))[:3],
         "record": team.season_record,

@@ -38,9 +38,10 @@ class PhotoTests(TestCase):
         self.assertEqual(AthleticsPhoto.objects.count(), 1)
 
     def test_login_page_shows_photos_or_falls_back(self):
-        with mock.patch("planner.photos.threading.Thread"):
+        with mock.patch("planner.photos._running_tests", return_value=False), mock.patch("planner.photos.threading.Thread") as thread:
             self.assertContains(self.client.get("/accounts/login/"), "School. Sport.")
             AthleticsPhoto.objects.create(image_url="https://x/a.jpg", title="Big win", link="https://x/a")
             response = self.client.get("/accounts/login/")
         self.assertContains(response, "Big win")
         self.assertContains(response, 'src="https://x/a.jpg"')
+        thread.assert_called()  # no photos yet, so a background refresh was started

@@ -1,5 +1,5 @@
 import json
-from datetime import date, time
+from datetime import date, time, timedelta
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -148,3 +148,46 @@ class CoachPagesTests(TestCase):
         User.objects.create_user("athlete", password="pw")
         self.client.login(username="athlete", password="pw")
         self.assertRedirects(self.client.get(reverse("planner:coach_roster")), reverse("planner:dashboard"), fetch_redirect_response=False)
+
+
+class GameDayBannerTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("sray", password="pw-test-123")
+        from django.utils import timezone as tz
+        # Marked as just synced, so pages don't fetch the real website mid-test.
+        self.team = Team.objects.create(name="Assumption Football", schedule_url=URL, schedule_synced_at=tz.now())
+        self.team.athletes.add(self.user)
+        self.client.login(username="sray", password="pw-test-123")
+
+    def add_game(self, start, **extra):
+        from django.utils import timezone as tz
+        local = tz.localtime() + start
+        return Assignment.objects.create(
+            team=self.team, external_id="g1", event_type=Event.GAME, title="vs. Pace University",
+            opponent="Pace University", is_home=True, date=local.date(),
+            start_time=local.time().replace(second=0, microsecond=0),
+            end_time=(local + timedelta(hours=3)).time().replace(second=0, microsecond=0) if (local + timedelta(hours=3)).date() == local.date() else time(23, 59),
+            **extra,
+        )
+
+    def test_banner_shows_on_game_day_with_time_until_kickoff(self):
+        from django.utils import timezone as tz
+        if (tz.localtime() + timedelta(minutes=30)).date() != tz.localdate():
+            self.skipTest("too close to midnight")
+        self.add_game(timedelta(minutes=30))
+        page = self.client.get(reverse("planner:dashboard"))
+        self.assertContains(page, "Game day")
+        self.assertContains(page, "vs. Pace University")
+        self.assertContains(page, "in 2")  # "in 29 min" / "in 30 min"
+
+    def test_banner_shows_final_score(self):
+        from django.utils import timezone as tz
+        if (tz.localtime() + timedelta(minutes=5)).date() != tz.localdate():
+            self.skipTest("too close to midnight")
+        self.add_game(timedelta(minutes=5), result="W, 35-20")  # a posted result means the game is final
+        page = self.client.get(reverse("planner:schedule"))
+        self.assertContains(page, "Final")
+        self.assertContains(page, "W 35-20")
+
+    def test_no_banner_without_a_game_today(self):
+        self.assertNotContains(self.client.get(reverse("planner:dashboard")), "gameday-logo")

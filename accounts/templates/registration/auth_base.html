@@ -9,6 +9,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#9fcff2">
   <title>{% block title %}Athlete Academic Assistant{% endblock %}</title>
+  <link rel="icon" href="https://assumptiongreyhounds.com/images/logos/site/site.png">
   <style>
     :root {
       --navy: #0a2240;
@@ -88,9 +89,9 @@
     .photos { position: absolute; inset: 0; }
     .photo { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s ease; }
     .photo.on { opacity: 1; }
-    /* Whole photo, never cropped: fitted between the logo bar and the caption, over a blurred copy of itself. */
-    .photo-bg { position: absolute; inset: -40px; width: calc(100% + 80px); height: calc(100% + 80px); object-fit: cover; filter: blur(26px) brightness(.55) saturate(1.2); }
-    .photo-fg { position: absolute; left: 18px; right: 18px; top: 76px; bottom: 190px; width: calc(100% - 36px); height: calc(100% - 266px); object-fit: contain; border-radius: 14px; transform: scale(.985); transition: transform 6s ease; }
+    /* Photo fills the frame, pulled in a little so a soft blurred edge shows around it. */
+    .photo-bg { position: absolute; inset: -40px; width: calc(100% + 80px); height: calc(100% + 80px); object-fit: cover; filter: blur(26px) brightness(.6) saturate(1.2); }
+    .photo-fg { position: absolute; inset: 4%; width: 92%; height: 92%; object-fit: cover; object-position: center 35%; border-radius: 16px; box-shadow: 0 14px 40px rgba(0, 0, 0, .35); transform: scale(1.03); transition: transform 7s ease; }
     .photo.on .photo-fg { transform: scale(1); }
     .shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6, 18, 40, .55) 0%, rgba(6, 18, 40, 0) 26%, rgba(6, 18, 40, 0) 48%, rgba(6, 18, 40, .88) 100%); }
     .photo-caption { text-align: left; }
@@ -180,7 +181,7 @@
       .slides { height: 34px; }
       .slide { font-size: 18px; }
       .art:has(.photos) { min-height: 300px; }
-      .photo-fg { top: 64px; bottom: 96px; height: calc(100% - 160px); border-radius: 10px; }
+      .photo-fg { inset: 5%; width: 90%; height: 90%; border-radius: 12px; }
       .shade { background: linear-gradient(180deg, rgba(6, 18, 40, .6) 0%, rgba(6, 18, 40, .15) 35%, rgba(6, 18, 40, .9) 100%); }
       .photo-caption .slides { height: 50px; }
       .photo-caption .slide { font-size: 15px; -webkit-line-clamp: 2; }

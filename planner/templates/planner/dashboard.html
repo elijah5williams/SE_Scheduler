@@ -3,7 +3,10 @@
 {% block title %}Dashboard · Athlete Academic Assistant{% endblock %}
 
 {% block content %}
+{% for hub in game_hubs %}{% include "planner/_gameday_banner.html" %}{% endfor %}
+
 <section class="hero">
+    {% include "planner/_hero_photos.html" %}
     <div>
         <span class="eyebrow">Your command center</span>
         <h1>Own your day.</h1>

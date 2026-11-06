@@ -1,6 +1,9 @@
 {% extends "planner/base.html" %}
 {% block content %}
+{% for team in teams %}{% if team.hub %}{% with hub=team.hub %}{% include "planner/_gameday_banner.html" %}{% endwith %}{% endif %}{% endfor %}
+
 <section class="coach-hero">
+  {% include "planner/_hero_photos.html" %}
   <p class="eyebrow">Coach command center</p>
   <h1>Lead your team.</h1>
   <p>Send workouts, training and games straight to your athletes' schedules.</p>

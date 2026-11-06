@@ -10,7 +10,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from .models import AthleticsPhoto
-from .schedule_sync import ScheduleError, fetch
+from .schedule_sync import ScheduleError, _running_tests, fetch
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ def login_photos():
     """Photos for the login page. Starts a background refresh when they're missing or old."""
     photos = list(AthleticsPhoto.objects.all()[:MAX_PHOTOS])
     stale = not photos or photos[0].fetched_at < timezone.now() - REFRESH_AFTER
-    if stale and cache.add("athletics-photos-refreshing", True, timeout=600):
+    if stale and not _running_tests() and cache.add("athletics-photos-refreshing", True, timeout=600):
         threading.Thread(target=_refresh_quietly, daemon=True).start()
     return photos
 

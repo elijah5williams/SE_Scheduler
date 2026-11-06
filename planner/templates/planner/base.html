@@ -6,14 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="A smart academic planner for college student-athletes.">
     <title>{% block title %}Athlete Academic Assistant{% endblock %}</title>
+    <link rel="icon" href="https://assumptiongreyhounds.com/images/logos/site/site.png">
     <link rel="stylesheet" href="{% static 'planner/styles.css' %}?v=2026-11-06d">
-    <link rel="stylesheet" href="{% static 'planner/coach.css' %}?v=2026-11-07">
+    <link rel="stylesheet" href="{% static 'planner/coach.css' %}?v=2026-11-07b">
+    <link rel="stylesheet" href="{% static 'planner/theme.css' %}?v=2026-11-07b">
 </head>
 <body>
     <div class="app-shell">
         <aside class="sidebar" id="sidebar">
             <a class="brand" href="{% if user.profile.role == 'coach' %}{% url 'planner:coach_dashboard' %}{% else %}{% url 'planner:dashboard' %}{% endif %}">
-                <span class="brand-mark">{% if user.profile.role == 'coach' %}C{% elif user.profile.role == 'teacher' %}T{% else %}A{% endif %}</span>
+                <span class="brand-mark brand-logo"><img src="https://assumptiongreyhounds.com/images/logos/site/site.png" alt="" onerror="this.remove()">{% if user.profile.role == 'coach' %}C{% elif user.profile.role == 'teacher' %}T{% else %}A{% endif %}</span>
                 {% with profile=user.profile %}
                 <span>
                     <strong>{{ profile.display_title }}</strong>

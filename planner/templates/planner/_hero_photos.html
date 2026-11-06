@@ -1,0 +1,20 @@
+{% load athletics %}{% login_photos as photos %}
+{% if photos %}
+  <div class="hero-photos" aria-hidden="true">
+    {% for photo in photos %}<div class="hp{% if forloop.first %} on{% endif %}"><img src="{{ photo.image_url }}" alt="" {% if not forloop.first %}loading="lazy"{% endif %} onerror="this.parentNode.remove()"></div>{% endfor %}
+  </div>
+  <a class="hero-credit" href="{{ photos.0.link }}" target="_blank" rel="noopener" data-hero-credit>{{ photos.0.title }}</a>
+  <script>
+    (function () {
+      var hero = document.currentScript.parentNode;
+      var slides = hero.querySelectorAll(".hp"), credit = hero.querySelector("[data-hero-credit]");
+      var info = [{% for photo in photos %}{t: "{{ photo.title|escapejs }}", l: "{{ photo.link|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}];
+      if (slides.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      var i = 0;
+      setInterval(function () {
+        slides[i].classList.remove("on"); i = (i + 1) % slides.length; slides[i].classList.add("on");
+        if (credit && info[i]) { credit.textContent = info[i].t; credit.href = info[i].l; }
+      }, 7000);
+    })();
+  </script>
+{% endif %}
