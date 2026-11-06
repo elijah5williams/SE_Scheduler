@@ -317,6 +317,33 @@ class Profile(models.Model):
     def is_verified_coach(self):
         return self.verification_status == self.VERIFIED and self.verified_role == self.COACH
 
+    def _main_team(self):
+        if self.role == self.COACH:
+            role = self.user.staff_roles.select_related("team").order_by("team__name").first()
+            if role:
+                return role.team, role.title
+            team = self.user.coached_teams.order_by("name").first()
+            return team, "Head Coach" if team else None
+        if self.role == self.STUDENT:
+            team = self.user.teams.order_by("name").first()
+            if team:
+                sport = team.name.removeprefix("Assumption ").strip() or team.name
+                return team, f"{sport} Player"
+        return None, None
+
+    @property
+    def display_title(self):
+        """What the sidebar calls this person: "Head Coach", "Football Player", "Teacher", ..."""
+        _, title = self._main_team()
+        if title:
+            return title
+        return {self.COACH: "Coach", self.TEACHER: "Teacher"}.get(self.role, "Athlete")
+
+    @property
+    def display_team(self):
+        team, _ = self._main_team()
+        return team.name if team else ""
+
 def make_join_code():
     return secrets.token_hex(3).upper()
 
@@ -337,6 +364,27 @@ class Team(models.Model):
 
     def __str__(self):
         return self.name
+
+    @classmethod
+    def coached_by(cls, user):
+        """Teams this user leads, as head coach or as a member of the coaching staff."""
+        return cls.objects.filter(models.Q(coach=user) | models.Q(staff__user=user)).distinct()
+
+
+class StaffMember(models.Model):
+    """A coach on a team's staff, with their title (Head Coach, Defensive Coordinator, ...)."""
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="staff")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="staff_roles")
+    title = models.CharField(max_length=80, default="Assistant Coach")
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order", "id"]
+        constraints = [models.UniqueConstraint(fields=["team", "user"], name="one_staff_role_per_team")]
+
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.username}, {self.title} ({self.team.name})"
 
 
 class Assignment(models.Model):

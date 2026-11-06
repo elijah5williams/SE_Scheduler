@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AcademicTask, Event, FlexibleRoutine, RoutineSession, StudySession, Profile, Team
+from .models import AcademicTask, Event, FlexibleRoutine, RoutineSession, StudySession, Profile, StaffMember, Team
 
 
 @admin.register(Event)
@@ -42,8 +42,16 @@ class ProfileAdmin(admin.ModelAdmin):
     search_fields = ("user__username", "school_email")
 
 
+class StaffMemberInline(admin.TabularInline):
+    model = StaffMember
+    extra = 1
+    autocomplete_fields = ("user",)
+    fields = ("user", "title", "order")
+
+
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
+    inlines = [StaffMemberInline]
     list_display = ("name", "coach", "join_code", "athlete_count")
     search_fields = ("name", "coach__email", "athletes__email")
     autocomplete_fields = ("coach",)

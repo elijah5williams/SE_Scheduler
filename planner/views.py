@@ -22,6 +22,7 @@ from .models import (
     FlexibleRoutine,
     Profile,
     RoutineSession,
+    StaffMember,
     StudySession,
     Team,
 )
@@ -429,7 +430,7 @@ def coach_dashboard(request):
         return redirect("planner:dashboard")
     if not profile.is_verified_coach:
         return render(request, "planner/coach_pending.html")
-    teams = Team.objects.filter(coach=request.user).prefetch_related("athletes", "assignments")
+    teams = Team.coached_by(request.user).prefetch_related("athletes", "assignments", "staff__user")
     return render(request, "planner/coach_dashboard.html", {"teams": teams, "today": timezone.localdate()})
 
 
@@ -440,6 +441,7 @@ def team_create(request):
         team = form.save(commit=False)
         team.coach = request.user
         team.save()
+        StaffMember.objects.create(team=team, user=request.user, title="Head Coach")
         messages.success(request, f"{team.name} created. Share the code {team.join_code} with your athletes.")
         return redirect("planner:coach_dashboard")
     return render(request, "planner/form_page.html", {"form": form, "form_type": "team", "title": "Create a team"})
@@ -447,7 +449,7 @@ def team_create(request):
 
 @coach_required
 def assignment_create(request, team_pk):
-    team = get_object_or_404(Team, pk=team_pk, coach=request.user)
+    team = get_object_or_404(Team.coached_by(request.user), pk=team_pk)
     form = AssignmentForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         assignment = form.save(commit=False)
@@ -465,7 +467,7 @@ def assignment_create(request, team_pk):
 
 @coach_required
 def assignment_update(request, pk):
-    assignment = get_object_or_404(Assignment, pk=pk, team__coach=request.user)
+    assignment = get_object_or_404(Assignment, pk=pk, team__in=Team.coached_by(request.user))
     form = AssignmentForm(request.POST or None, instance=assignment)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -481,7 +483,7 @@ def assignment_update(request, pk):
 
 @coach_required
 def assignment_delete(request, pk):
-    assignment = get_object_or_404(Assignment, pk=pk, team__coach=request.user)
+    assignment = get_object_or_404(Assignment, pk=pk, team__in=Team.coached_by(request.user))
     if request.method == "POST":
         title = assignment.title
         assignment.delete()  # removes the copies from athletes' schedules too

@@ -13,10 +13,12 @@
         <aside class="sidebar" id="sidebar">
             <a class="brand" href="{% if user.profile.role == 'coach' %}{% url 'planner:coach_dashboard' %}{% else %}{% url 'planner:dashboard' %}{% endif %}">
                 <span class="brand-mark">{% if user.profile.role == 'coach' %}C{% elif user.profile.role == 'teacher' %}T{% else %}A{% endif %}</span>
+                {% with profile=user.profile %}
                 <span>
-                    <strong>{% if user.profile.role == 'coach' %}Coach{% elif user.profile.role == 'teacher' %}Teacher{% else %}Athlete{% endif %}</strong>
-                    <small>Academic Assistant</small>
+                    <strong>{{ profile.display_title }}</strong>
+                    <small>{{ profile.display_team|default:"Academic Assistant" }}</small>
                 </span>
+                {% endwith %}
             </a>
             <nav class="main-nav" aria-label="Main navigation">
                 {% if user.profile.role == 'coach' %}
