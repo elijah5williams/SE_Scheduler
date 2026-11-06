@@ -26,6 +26,7 @@ from .models import (
     StudySession,
     Team,
 )
+from .schedule_sync import ScheduleError, game_hub, sync_if_stale, sync_team
 from .services import events_on, generate_study_plan, planner_insights
 
 
@@ -33,6 +34,8 @@ from .services import events_on, generate_study_plan, planner_insights
 def dashboard(request):
     if request.user.profile.role == Profile.COACH:
         return redirect("planner:coach_dashboard")
+    teams = list(request.user.teams.exclude(schedule_url=""))
+    sync_if_stale(teams)
     today = timezone.localdate()
     next_week = today + timedelta(days=7)
     today_events = sorted(events_on(today, request.user), key=lambda event: event.start_time)
@@ -58,12 +61,14 @@ def dashboard(request):
         "week_sessions": week_sessions,
         "completed_count": completed_count,
         "progress": progress,
+        "game_hubs": [game_hub(team) for team in teams],
     }
     return render(request, "planner/dashboard.html", context)
 
 
 @login_required
 def schedule(request):
+    sync_if_stale(request.user.teams.exclude(schedule_url=""))
     today = timezone.localdate()
     days = []
     for offset in range(7):
@@ -430,8 +435,27 @@ def coach_dashboard(request):
         return redirect("planner:dashboard")
     if not profile.is_verified_coach:
         return render(request, "planner/coach_pending.html")
-    teams = Team.coached_by(request.user).prefetch_related("athletes", "assignments", "staff__user")
+    sync_if_stale(Team.coached_by(request.user).exclude(schedule_url=""))
+    teams = list(Team.coached_by(request.user).prefetch_related("athletes", "assignments", "staff__user"))
+    for team in teams:
+        team.hub = game_hub(team) if team.schedule_url else None
     return render(request, "planner/coach_dashboard.html", {"teams": teams, "today": timezone.localdate()})
+
+
+@coach_required
+def team_sync(request, team_pk):
+    team = get_object_or_404(Team.coached_by(request.user), pk=team_pk)
+    if request.method == "POST":
+        try:
+            counts = sync_team(team)
+        except ScheduleError as exc:
+            messages.error(request, f"Couldn't update the schedule: {exc}")
+        else:
+            messages.success(
+                request,
+                f"Schedule updated: {counts['added']} new, {counts['updated']} changed, {counts['removed']} removed.",
+            )
+    return redirect("planner:coach_dashboard")
 
 
 @coach_required

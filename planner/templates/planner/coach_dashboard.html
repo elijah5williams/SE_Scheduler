@@ -7,6 +7,12 @@
   .coach-hero p { margin:0 0 1.25rem; opacity:.85; }
   .coach-btn { display:inline-block; padding:.65rem 1.1rem; border-radius:10px; font-weight:700; text-decoration:none; background:#fff; color:#112240; }
   .coach-btn.green { background:#2f6f56; color:#fff; }
+  .coach-btn.ghost { background:#fff; color:var(--navy); border:1px solid var(--line); cursor:pointer; font:inherit; font-weight:700; }
+  .team-actions { display:flex; gap:.6rem; flex-wrap:wrap; }
+  .team-actions form { margin:0; }
+  .result-chip { display:inline-block; margin-left:.4rem; padding:.05rem .45rem; border-radius:6px; font-size:.75rem; font-weight:800; background:#eef1f4; color:var(--ink); }
+  .result-chip.win { background:var(--green-light); color:var(--green); }
+  .result-chip.loss { background:#fbe9e8; color:var(--danger); }
   .team-card { background:#fff; border:1px solid #e6e2d8; border-radius:20px; padding:1.5rem; margin-bottom:1.25rem; }
   .team-head { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap; }
   .team-head h2 { margin:0; }
@@ -65,8 +71,18 @@
           <span>Join code <span class="code">{{ team.join_code }}</span></span>
         </p>
       </div>
-      <a class="coach-btn green" href="{% url 'planner:assignment_create' team.pk %}">+ Assign</a>
+      <div class="team-actions">
+        {% if team.schedule_url %}
+          <form method="post" action="{% url 'planner:team_sync' team.pk %}">
+            {% csrf_token %}
+            <button class="coach-btn ghost" type="submit">↻ Sync schedule</button>
+          </form>
+        {% endif %}
+        <a class="coach-btn green" href="{% url 'planner:assignment_create' team.pk %}">+ Assign</a>
+      </div>
     </div>
+
+    {% if team.hub %}{% with hub=team.hub %}{% include "planner/_game_hub.html" %}{% endwith %}{% endif %}
 
     {% if team.staff.all %}
       <section class="staff-block" aria-label="{{ team.name }} coaching staff">
@@ -118,14 +134,18 @@
       <div class="assign-row">
         <div>
           <span class="assign-type">{{ a.get_event_type_display }}</span><br>
-          <strong>{{ a.title }}</strong><br>
+          <strong>{{ a.title }}</strong>{% if a.result %}<span class="result-chip {% if a.result|slice:':1' == 'W' %}win{% elif a.result|slice:':1' == 'L' %}loss{% endif %}">{{ a.result }}</span>{% endif %}<br>
           {{ a.date|date:"D, M j" }} · {{ a.start_time|time:"g:i A" }}–{{ a.end_time|time:"g:i A" }}
           {% if a.location %}· {{ a.location }}{% endif %}
           {% if a.repeat_weekly %}· repeats weekly{% endif %}
         </div>
         <div class="assign-actions">
-          <a href="{% url 'planner:assignment_update' a.pk %}">Edit</a>
-          <a href="{% url 'planner:assignment_delete' a.pk %}">Delete</a>
+          {% if a.is_synced %}
+            <span class="empty" title="Changes come from the athletics website">From website</span>
+          {% else %}
+            <a href="{% url 'planner:assignment_update' a.pk %}">Edit</a>
+            <a href="{% url 'planner:assignment_delete' a.pk %}">Delete</a>
+          {% endif %}
         </div>
       </div>
     {% endfor %}

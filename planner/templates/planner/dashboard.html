@@ -12,6 +12,8 @@
     <a href="{% url 'planner:study_planner' %}" class="button button-light">✦ Build my study plan</a>
 </section>
 
+{% for hub in game_hubs %}{% include "planner/_game_hub.html" %}{% endfor %}
+
 <section class="stat-grid">
     <article class="stat-card">
         <span class="stat-icon navy">✓</span>

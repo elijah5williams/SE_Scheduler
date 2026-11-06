@@ -1,0 +1,79 @@
+{% comment %}
+Game-day panel: season record, next-game countdown with both logos, and recent scores.
+Expects `hub` from planner.schedule_sync.game_hub().
+{% endcomment %}
+{% with team=hub.team next=hub.next_game live=hub.live_game %}
+<section class="game-hub" aria-label="{{ team.name }} game day">
+  <div class="gh-top">
+    <div class="gh-matchup">
+      {% with game=live|default:next %}
+      {% if game %}
+        <div class="gh-eyebrow">
+          {% if live %}<span class="gh-live-dot"></span>Live now{% else %}Next game{% endif %}
+          · {{ game.date|date:"D, M j" }} · {{ game.start_time|time:"g:i A" }}
+        </div>
+        <div class="gh-teams">
+          <div class="gh-team">
+            <span class="gh-logo">
+              {% if team.logo_url %}<img src="{{ team.logo_url }}" alt="" loading="lazy" onerror="this.remove()">{% endif %}
+              <span class="gh-logo-fallback">{{ team.school_name|slice:":1" }}</span>
+            </span>
+            <span class="gh-team-name">{{ team.school_name }}</span>
+          </div>
+          <span class="gh-vs">{% if game.is_home %}vs.{% else %}at{% endif %}</span>
+          <div class="gh-team">
+            <span class="gh-logo">
+              {% if game.opponent_logo %}<img src="{{ game.opponent_logo }}" alt="" loading="lazy" onerror="this.remove()">{% endif %}
+              <span class="gh-logo-fallback">{{ game.opponent|slice:":1" }}</span>
+            </span>
+            <span class="gh-team-name">{{ game.opponent|default:game.title }}</span>
+          </div>
+        </div>
+        {% if game.location %}<p class="gh-where">{{ game.location }}</p>{% endif %}
+        {% if live %}
+          <p class="gh-live-note">The final score shows here once it's posted.</p>
+        {% else %}
+          <div class="gh-countdown" data-kickoff="{{ game.kickoff|date:'c' }}" aria-live="off">
+            <div><strong data-unit="d">–</strong><span>days</span></div>
+            <div><strong data-unit="h">–</strong><span>hrs</span></div>
+            <div><strong data-unit="m">–</strong><span>min</span></div>
+            <div><strong data-unit="s">–</strong><span>sec</span></div>
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="gh-eyebrow">Season complete</div>
+        <p class="gh-where">No games left on the schedule.</p>
+      {% endif %}
+      {% endwith %}
+    </div>
+
+    {% if hub.recent %}
+      <div class="gh-recent">
+        <div class="gh-eyebrow">Recent scores</div>
+        <ul>
+          {% for g in hub.recent %}
+            <li>
+              <span class="gh-badge {% if g.result|slice:':1' == 'W' %}win{% elif g.result|slice:':1' == 'L' %}loss{% endif %}">{{ g.result|slice:":1" }}</span>
+              <span class="gh-recent-opp">{% if g.is_home %}vs.{% else %}at{% endif %} {{ g.opponent }}</span>
+              <span class="gh-recent-score">{{ g.result|slice:"3:" }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if hub.record %}
+    <dl class="gh-record">
+      {% for label, value in hub.record %}
+        <div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
+      {% endfor %}
+    </dl>
+  {% endif %}
+
+  <p class="gh-foot">
+    {{ team.name }} · from <a href="{{ team.schedule_url }}" target="_blank" rel="noopener">the athletics website</a>
+    {% if team.schedule_synced_at %}· updated {{ team.schedule_synced_at|timesince }} ago{% endif %}
+  </p>
+</section>
+{% endwith %}

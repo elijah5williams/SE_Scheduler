@@ -112,6 +112,18 @@ Accounts are created already verified, because the roster replaces the email and
 
 Keep real rosters out of git, because they contain student information. `rosters/*.csv` is ignored, except for the template.
 
+## Live game schedule, scores and season record
+
+A team's games can come straight from its page on the athletics website. Link the team once:
+
+```bash
+python3 manage.py sync_schedule "Assumption Football" https://assumptiongreyhounds.com/sports/football/schedule
+```
+
+That puts every game on every athlete's schedule. After that the app keeps itself current. When someone opens their dashboard, schedule or coach dashboard, it re-checks the website if it hasn't in the last hour, or the last 10 minutes on game day. Final scores, time or venue changes and cancelled games then reach every athlete. Coaches can also press **Sync schedule** on their dashboard, or you can run `python3 manage.py sync_schedule` to refresh every linked team.
+
+The dashboards show a game-day panel with a live countdown to the next game, both teams' logos, the latest scores and the season record (Overall, Conf, Streak, Home, Away and so on). Games from the website show "From website" on the coach dashboard instead of Edit and Delete, because the next sync would overwrite any changes.
+
 ## Run the tests
 
 ```bash
