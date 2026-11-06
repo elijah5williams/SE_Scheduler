@@ -322,8 +322,13 @@ def make_join_code():
 
 
 class Team(models.Model):
+    # Nullable so a school's teams can exist before a coach account is attached.
     coach = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="coached_teams"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="coached_teams",
     )
     name = models.CharField(max_length=80)
     join_code = models.CharField(max_length=8, unique=True, default=make_join_code)

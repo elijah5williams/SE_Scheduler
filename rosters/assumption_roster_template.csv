@@ -1,0 +1,5 @@
+first_name,last_name,email,role,sport
+Sample,Coach,sample.coach@assumption.edu,coach,Football
+Sample,Athlete,sample.athlete@assumption.edu,athlete,Football
+Example,Coach,example.coach@assumption.edu,coach,Women's Soccer
+Example,Athlete,example.athlete@assumption.edu,athlete,Women's Soccer

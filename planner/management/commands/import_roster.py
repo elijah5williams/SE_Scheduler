@@ -1,0 +1,206 @@
+"""Bulk-create athlete and coach accounts from a roster CSV.
+
+Each row puts one person on one team named "Assumption <Sport>".
+The command can be run again safely: people and teams that already exist are
+reused, not duplicated.
+
+CSV columns (header row required):
+    first_name, last_name, email, role, sport
+
+    role   "athlete" or "coach" (also accepts "student", "head coach", "assistant coach")
+    sport  e.g. "Football", "Women's Soccer" -> team "Assumption Football", "Assumption Women's Soccer"
+"""
+import csv
+import secrets
+
+from django.conf import settings
+from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.models import User
+from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
+from django.utils import timezone
+
+from planner.models import Profile, Team
+
+SCHOOL_NAME = "Assumption"
+SCHOOL_DOMAIN = "assumption.edu"
+
+ROLE_ALIASES = {
+    "athlete": Profile.STUDENT,
+    "student": Profile.STUDENT,
+    "student-athlete": Profile.STUDENT,
+    "coach": Profile.COACH,
+    "head coach": Profile.COACH,
+    "assistant coach": Profile.COACH,
+}
+REQUIRED_COLUMNS = {"first_name", "last_name", "email", "role", "sport"}
+
+
+def team_name_for(sport):
+    sport = " ".join(sport.split())
+    if sport.lower().startswith(SCHOOL_NAME.lower() + " "):
+        return sport
+    return f"{SCHOOL_NAME} {sport}"
+
+
+class Command(BaseCommand):
+    help = "Create athlete and coach accounts from a roster CSV and group them into Assumption teams."
+
+    def add_arguments(self, parser):
+        parser.add_argument("csv_path", help="Path to the roster CSV file.")
+        parser.add_argument(
+            "--send-invites",
+            action="store_true",
+            help="Email each new account a link to set their password.",
+        )
+        parser.add_argument(
+            "--allow-other-domains",
+            action="store_true",
+            help=f"Accept emails that are not @{SCHOOL_DOMAIN}.",
+        )
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Check the file and report what would happen without saving anything.",
+        )
+
+    def handle(self, *args, csv_path, send_invites, allow_other_domains, dry_run, **options):
+        rows = self._read_rows(csv_path, allow_other_domains)
+
+        stats = {"users_created": 0, "users_existing": 0, "teams_created": 0}
+        new_users = []
+        try:
+            with transaction.atomic():
+                for row in rows:
+                    self._import_row(row, stats, new_users)
+                if dry_run:
+                    raise _DryRun
+        except _DryRun:
+            self.stdout.write(self.style.WARNING("Dry run: nothing was saved."))
+
+        if send_invites and not dry_run:
+            self._send_invites(new_users)
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"{len(rows)} row(s) processed: {stats['users_created']} account(s) created, "
+                f"{stats['users_existing']} already existed, {stats['teams_created']} team(s) created."
+            )
+        )
+        if new_users and not send_invites and not dry_run:
+            self.stdout.write(
+                "New accounts have no password yet. Re-run with --send-invites, or have people use "
+                "'Forgot password' on the login page with their school email."
+            )
+
+    def _read_rows(self, csv_path, allow_other_domains):
+        try:
+            with open(csv_path, newline="", encoding="utf-8-sig") as handle:
+                reader = csv.DictReader(handle)
+                headers = {h.strip().lower() for h in (reader.fieldnames or [])}
+                missing = REQUIRED_COLUMNS - headers
+                if missing:
+                    raise CommandError(f"Missing column(s): {', '.join(sorted(missing))}")
+                raw_rows = [
+                    {(k or "").strip().lower(): (v or "").strip() for k, v in row.items()}
+                    for row in reader
+                ]
+        except FileNotFoundError:
+            raise CommandError(f"File not found: {csv_path}")
+
+        rows, errors, seen = [], [], set()
+        for line, row in enumerate(raw_rows, start=2):
+            if not any(row.values()):
+                continue
+            email = row["email"].lower()
+            role = ROLE_ALIASES.get(row["role"].lower())
+            if not all(row[c] for c in REQUIRED_COLUMNS):
+                errors.append(f"line {line}: every column needs a value")
+            elif "@" not in email:
+                errors.append(f"line {line}: '{row['email']}' is not an email address")
+            elif not allow_other_domains and email.rsplit("@", 1)[1] != SCHOOL_DOMAIN:
+                errors.append(f"line {line}: {email} is not an @{SCHOOL_DOMAIN} address")
+            elif role is None:
+                errors.append(f"line {line}: role must be athlete or coach, not '{row['role']}'")
+            elif (email, team_name_for(row["sport"])) in seen:
+                errors.append(f"line {line}: {email} is listed twice for {row['sport']}")
+            else:
+                seen.add((email, team_name_for(row["sport"])))
+                rows.append({**row, "email": email, "role": role})
+
+        if errors:
+            raise CommandError("Fix these rows and try again:\n  " + "\n  ".join(errors))
+        return rows
+
+    def _import_row(self, row, stats, new_users):
+        user = User.objects.filter(email__iexact=row["email"]).first()
+        if user is None:
+            user = User(
+                username=self._unique_username(row["email"]),
+                email=row["email"],
+                first_name=row["first_name"],
+                last_name=row["last_name"],
+                is_active=True,  # the school roster stands in for the email check
+            )
+            user.set_unusable_password()
+            user.save()  # signal creates the profile
+            stats["users_created"] += 1
+            new_users.append(user)
+        else:
+            stats["users_existing"] += 1
+
+        profile = user.profile
+        if profile.role != Profile.COACH:  # a coach listed on two teams stays a coach
+            profile.role = row["role"]
+        profile.school_email = row["email"]
+        profile.email_verified = True
+        profile.verification_status = Profile.VERIFIED
+        profile.verified_role = profile.role
+        profile.verified_at = profile.verified_at or timezone.now()
+        profile.save()
+
+        team, created = Team.objects.get_or_create(name=team_name_for(row["sport"]))
+        if created:
+            stats["teams_created"] += 1
+
+        if row["role"] == Profile.COACH:
+            if team.coach is None:
+                team.coach = user
+                team.save(update_fields=["coach"])
+            elif team.coach != user:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"{team.name} already has coach {team.coach.email}; {user.email} was not made coach. "
+                        "Change it in the admin if needed."
+                    )
+                )
+        else:
+            team.athletes.add(user)
+            for assignment in team.assignments.all():
+                assignment.push_to(user)
+
+    def _unique_username(self, email):
+        base = email.split("@", 1)[0][:140]
+        username, n = base, 1
+        while User.objects.filter(username=username).exists():
+            n += 1
+            username = f"{base}{n}"
+        return username
+
+    def _send_invites(self, users):
+        for user in users:
+            # PasswordResetForm skips accounts with unusable passwords, so give each a random one first.
+            user.set_password(secrets.token_urlsafe(24))
+            user.save(update_fields=["password"])
+            form = PasswordResetForm({"email": user.email})
+            if form.is_valid():
+                form.save(
+                    domain_override=getattr(settings, "SITE_DOMAIN", "127.0.0.1:8000"),
+                    use_https=False,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                )
+        self.stdout.write(f"Sent {len(users)} set-your-password email(s).")
+
+
+class _DryRun(Exception):
+    pass
