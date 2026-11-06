@@ -6,6 +6,7 @@ from .models import Profile
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def create_profile(sender, instance, created, **kwargs):
-    if created:
+def create_profile(sender, instance, created, raw=False, **kwargs):
+    # raw=True means loaddata is restoring a backup, which brings its own profiles.
+    if created and not raw:
         Profile.objects.get_or_create(user=instance)

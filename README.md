@@ -160,6 +160,31 @@ Sign-up verification and "Forgot password?" links need a real email service. Wit
    - `DEFAULT_FROM_EMAIL` = `Athlete Academic Assistant <the-sender-you-verified@example.com>`
 3. Save. Render redeploys, and emails start sending.
 
+### Backing up the live database
+
+Render's free Postgres database can expire, so check its expiry date on the **se-scheduler-db** page in Render. Teams, rosters, coaching staff, schedules and login photos are rebuilt from the athletics website on every deploy. Only what people add themselves needs a backup: classes, assignments, study plans, routines, coach-assigned practices and changed passwords.
+
+To make a backup from your laptop:
+
+1. In Render, open **se-scheduler-db → Info** and copy the **External Database URL**.
+2. In your project folder, run this, pasting the URL in place of `PASTE_URL_HERE`:
+
+   ```bash
+   DATABASE_URL="PASTE_URL_HERE" python3 manage.py dumpdata --natural-foreign --natural-primary --exclude contenttypes --exclude auth.permission --exclude sessions --exclude admin.logentry --indent 2 -o backup.json
+   ```
+
+   `backup.json` holds real people's data. Keep it on your computer and don't commit it; `.gitignore` already skips it.
+
+To restore into a new, empty database (for example after recreating it on Render):
+
+```bash
+DATABASE_URL="NEW_URL_HERE" python3 manage.py migrate
+```
+
+```bash
+DATABASE_URL="NEW_URL_HERE" python3 manage.py loaddata backup.json
+```
+
 On the free plan the site sleeps after a while without visitors, so the first visit afterwards takes about 30 seconds.
 
 ## Run the tests

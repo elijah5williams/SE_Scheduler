@@ -12,3 +12,6 @@ staticfiles/
 # Real rosters contain student info
 rosters/*.csv
 !rosters/assumption_roster_template.csv
+
+# Database backups contain real people's data
+backup*.json
