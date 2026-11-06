@@ -6,7 +6,8 @@ from . import views
 app_name = "planner"
 
 urlpatterns = [
-    path("", views.dashboard, name="dashboard"),
+    path("", views.home, name="home"),
+    path("dashboard/", views.dashboard, name="dashboard"),
     path("schedule/", views.schedule, name="schedule"),
     path("events/add/", views.event_create, name="event_create"),
     path("events/<int:pk>/edit/", views.event_update, name="event_update"),

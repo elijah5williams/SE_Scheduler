@@ -191,3 +191,24 @@ class GameDayBannerTests(TestCase):
 
     def test_no_banner_without_a_game_today(self):
         self.assertNotContains(self.client.get(reverse("planner:dashboard")), "gameday-logo")
+
+
+class HomePageTests(TestCase):
+    def test_home_is_the_landing_page_with_next_game_and_scores(self):
+        from django.utils import timezone as tz
+        user = User.objects.create_user("sray", password="pw-test-123")
+        team = Team.objects.create(name="Assumption Football", schedule_url=URL, schedule_synced_at=tz.now())
+        team.athletes.add(user)
+        today = tz.localdate()
+        Assignment.objects.create(team=team, external_id="a", title="vs. Pace University", opponent="Pace University",
+                                  is_home=True, date=today + timedelta(days=3), start_time=time(12), end_time=time(15))
+        Assignment.objects.create(team=team, external_id="b", title="at Bentley University", opponent="Bentley University",
+                                  is_home=False, date=today - timedelta(days=4), start_time=time(12), end_time=time(15), result="W, 29-27")
+        self.client.login(username="sray", password="pw-test-123")
+        response = self.client.post(reverse("login"), {"username": "sray", "password": "pw-test-123"})
+        self.assertRedirects(response, reverse("planner:home"), fetch_redirect_response=False)
+        page = self.client.get(reverse("planner:home"))
+        self.assertContains(page, "vs. Pace University")      # ticket stub
+        self.assertContains(page, "W 29-27")                  # live score ticker
+        self.assertContains(page, reverse("planner:dashboard"))
+        self.assertEqual(self.client.get(reverse("planner:dashboard")).status_code, 200)

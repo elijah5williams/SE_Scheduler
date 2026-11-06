@@ -32,6 +32,39 @@ from .services import events_on, generate_study_plan, planner_insights
 
 
 @login_required
+def home(request):
+    """Full-page landing: live athletics photos, the user's next game and the latest Greyhound scores."""
+    from .photos import login_photos
+
+    profile = request.user.profile
+    is_coach = profile.role == Profile.COACH
+    teams = list(Team.coached_by(request.user) if is_coach else request.user.teams.all())
+    linked = [team for team in teams if team.schedule_url]
+    sync_if_stale(linked)
+    hubs = [game_hub(team) for team in linked]
+    upcoming = sorted((h for h in hubs if h["next_game"]), key=lambda h: h["next_game"].kickoff)
+    next_hub = upcoming[0] if upcoming else (hubs[0] if hubs else None)
+
+    since = timezone.localdate() - timedelta(days=21)
+    ticker = list(
+        Assignment.objects.exclude(external_id="").exclude(result="")
+        .filter(date__gte=since).select_related("team").order_by("-date", "-start_time")[:24]
+    )
+    ticker = [g for g in ticker if not g.is_cancelled]
+    return render(
+        request,
+        "planner/home.html",
+        {
+            "photos": login_photos(),
+            "is_coach": is_coach,
+            "next_hub": next_hub,
+            "next_game": next_hub["next_game"] if next_hub else None,
+            "ticker": ticker,
+        },
+    )
+
+
+@login_required
 def dashboard(request):
     if request.user.profile.role == Profile.COACH:
         return redirect("planner:coach_dashboard")
