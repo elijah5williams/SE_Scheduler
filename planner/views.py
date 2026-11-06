@@ -439,6 +439,7 @@ def coach_dashboard(request):
     teams = list(Team.coached_by(request.user).prefetch_related("athletes", "assignments", "staff__user"))
     for team in teams:
         team.hub = game_hub(team) if team.schedule_url else None
+        team.team_events = [a for a in team.assignments.all() if not a.external_id]
     return render(request, "planner/coach_dashboard.html", {"teams": teams, "today": timezone.localdate()})
 
 

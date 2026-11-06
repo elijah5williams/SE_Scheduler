@@ -77,3 +77,41 @@ Expects `hub` from planner.schedule_sync.game_hub().
   </p>
 </section>
 {% endwith %}
+
+<script>
+  // Live countdown to kickoff. Inline so it always matches this panel, even if app.js is cached.
+  (function () {
+    if (window.ghCountdownStarted) return;
+    window.ghCountdownStarted = true;
+    function start(box) {
+      var kickoff = new Date(box.getAttribute("data-kickoff")).getTime();
+      if (isNaN(kickoff)) return;
+      var cell = function (unit) { return box.querySelector('[data-unit="' + unit + '"]'); };
+      var d = cell("d"), h = cell("h"), m = cell("m"), s = cell("s");
+      var pad = function (n) { return (n < 10 ? "0" : "") + n; };
+      var timer = null;
+      function tick() {
+        var left = Math.max(0, Math.floor((kickoff - Date.now()) / 1000));
+        var days = Math.floor(left / 86400);
+        var hours = Math.floor((left % 86400) / 3600);
+        var mins = Math.floor((left % 3600) / 60);
+        d.textContent = days;
+        h.textContent = pad(hours);
+        m.textContent = pad(mins);
+        s.textContent = pad(left % 60);
+        if (left === 0 && timer) {
+          clearInterval(timer);
+          var key = "gh-reloaded-" + kickoff;
+          var seen = false;
+          try { seen = sessionStorage.getItem(key); sessionStorage.setItem(key, "1"); } catch (e) {}
+          if (!seen) setTimeout(function () { window.location.reload(); }, 1500); // switch to "Live now"
+        }
+      }
+      tick();
+      timer = setInterval(tick, 1000);
+    }
+    function init() { document.querySelectorAll(".gh-countdown[data-kickoff]").forEach(start); }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+    else init();
+  })();
+</script>
