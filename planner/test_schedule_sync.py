@@ -208,7 +208,7 @@ class HomePageTests(TestCase):
         response = self.client.post(reverse("login"), {"username": "sray", "password": "pw-test-123"})
         self.assertRedirects(response, reverse("planner:home"), fetch_redirect_response=False)
         page = self.client.get(reverse("planner:home"))
-        self.assertContains(page, "vs. Pace University")      # ticket stub
+        self.assertContains(page, "Pace University")          # next-game card
         self.assertContains(page, "W 29-27")                  # live score ticker
         self.assertContains(page, reverse("planner:dashboard"))
         self.assertEqual(self.client.get(reverse("planner:dashboard")).status_code, 200)

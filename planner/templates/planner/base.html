@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="A smart academic planner for college student-athletes.">
     <title>{% block title %}Athlete Academic Assistant{% endblock %}</title>
+    {% block extra_head %}{% endblock %}
     <link rel="icon" href="https://assumptiongreyhounds.com/images/logos/site/site.png">
     <link rel="stylesheet" href="{% static 'planner/styles.css' %}?v=2026-11-06d">
     <link rel="stylesheet" href="{% static 'planner/coach.css' %}?v=2026-11-07b">
@@ -25,7 +26,7 @@
             </a>
             <nav class="main-nav" aria-label="Main navigation">
                 {% if user.profile.role == 'coach' %}
-                <a href="{% url 'planner:home' %}"><span class="nav-icon">◎</span> Home</a>
+                <a href="{% url 'planner:home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}"><span class="nav-icon">◎</span> Home</a>
                 <a href="{% url 'planner:coach_dashboard' %}" class="{% if request.resolver_match.url_name == 'coach_dashboard' %}active{% endif %}">
                     <span class="nav-icon">⌂</span> Coach Dashboard
                 </a>
@@ -42,7 +43,7 @@
                     <span class="nav-icon">✦</span> New Team
                 </a>
                 {% else %}
-                <a href="{% url 'planner:home' %}"><span class="nav-icon">◎</span> Home</a>
+                <a href="{% url 'planner:home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}"><span class="nav-icon">◎</span> Home</a>
                 <a href="{% url 'planner:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                     <span class="nav-icon">⌂</span> Dashboard
                 </a>
