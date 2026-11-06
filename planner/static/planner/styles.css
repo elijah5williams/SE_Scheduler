@@ -343,3 +343,5 @@ p { color: var(--muted); line-height: 1.6; }
     .gh-record dd { font-size: 18px; }
 }
 .hero + .game-hub { margin-top: 24px; }
+.gh-badge.meet { background:#51606f; }
+.gh-season-done { margin: 14px 0 0; color: #b8c7d8; font-size: 15px; }

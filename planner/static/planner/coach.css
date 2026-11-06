@@ -106,3 +106,9 @@
 .tile-go { position:absolute; right:1rem; top:50%; transform:translateY(-50%); font-size:1.1rem; color:var(--muted); }
 .tile:hover .tile-go { color:var(--green); }
 @media (max-width:820px) { .team-tiles { grid-template-columns:1fr; } }
+
+/* Meets, neutral sites and cancellations */
+.tag.neutral { background:#efeaf6; color:#5a4a7a; }
+.placing { font-weight:800; font-size:.92rem; color:var(--ink); background:#f3f5f7; border:1px solid var(--line); border-radius:7px; padding:.2rem .5rem; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.status-tag { font-size:.7rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); background:#f1f1f1; border-radius:6px; padding:.2rem .5rem; }
+.sched-row.is-cancelled .sched-opp-name, .sched-row.is-cancelled .sched-day { color:var(--muted); text-decoration:line-through; }

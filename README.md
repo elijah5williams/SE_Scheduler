@@ -112,6 +112,19 @@ Accounts are created already verified, because the roster replaces the email and
 
 Keep real rosters out of git, because they contain student information. `rosters/*.csv` is ignored, except for the template.
 
+## Every Assumption team from the athletics website
+
+One command builds every team listed on assumptiongreyhounds.com. Each team gets its athletes, its coaches with their titles, and its live schedule:
+
+```bash
+python3 manage.py sync_athletics --password greyhounds
+```
+
+- **Emails:** accounts use first.last@assumption.edu. Someone on two teams, such as cross country and track, gets one account on both.
+- **Password:** `--password` applies to new accounts only. People who already exist keep their password.
+- **Re-running:** run it again any time to pick up roster changes. To update just some sports, name them, e.g. `python3 manage.py sync_athletics football mens-basketball`.
+- **On Render:** the deploy runs this automatically.
+
 ## Live game schedule, scores and season record
 
 A team's games can come straight from its page on the athletics website. Link the team once:

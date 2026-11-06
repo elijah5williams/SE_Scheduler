@@ -17,7 +17,7 @@
       <a class="tile" href="{% url 'planner:coach_schedule' %}">
         <span class="tile-label">Team schedule</span>
         {% with next=team.hub.next_game %}
-          <strong>{% if team.hub %}{{ team.hub.games|length }} games{% else %}{{ team.team_events|length }} events{% endif %}</strong>
+          <strong>{% if team.hub %}{{ team.hub.games|length }} event{{ team.hub.games|length|pluralize }}{% else %}{{ team.team_events|length }} events{% endif %}</strong>
           <span class="tile-sub">{% if next %}Next: {% if next.is_home %}vs.{% else %}at{% endif %} {{ next.opponent }} · {{ next.date|date:"M j" }}{% elif team.team_events %}{{ team.team_events|length }} practice{{ team.team_events|length|pluralize }} &amp; events{% else %}Nothing scheduled yet{% endif %}</span>
         {% endwith %}
         <span class="tile-go" aria-hidden="true">→</span>

@@ -45,6 +45,7 @@ class Game:
     opponent: str = ""
     opponent_logo: str = ""
     is_home: object = None
+    time_tba: bool = False
 
     def fields(self):
         return {
@@ -58,6 +59,7 @@ class Game:
             "opponent": self.opponent,
             "opponent_logo": self.opponent_logo,
             "is_home": self.is_home,
+            "time_tba": self.time_tba,
             "repeat_weekly": False,
             "repeat_until": None,
         }
@@ -109,21 +111,31 @@ def parse(page, base_url=""):
     for item in re.split(r'<li class="sidearm-schedule-game ', page)[1:]:
         game_id = re.search(r'data-game-id="(\d+)"', item)
         result = re.search(r'<div class="sidearm-schedule-game-result[^"]*"[^>]*>(.*?)</div>', item, re.S)
-        match = re.match(r"([WLT]),?\s*(\d+\s*-\s*\d+)", _text(result.group(1)) if result else "")
+        result_text = _text(result.group(1)) if result else ""
+        match = re.match(r"([WLT]),?\s*(\d+\s*-\s*\d+)", result_text)
+        # Meets post a placing ("6th (176)", "1st/8 (+9)"); some events are cancelled.
+        placing = re.match(r"(\d+(?:st|nd|rd|th)(?:/\d+)?(?:\s*\([^)]*\))?)", result_text)
+        status = re.match(r"(Cancel+ed|Postponed)", result_text, re.I)
         classes = item.split('"', 1)[0]
         logo = re.search(r'<img[^>]*(?:data-src|src)="(/images/logos/[^"]+)"', item)
         details.append(
             {
                 "id": game_id.group(1) if game_id else "",
-                "result": f"{match.group(1)}, {match.group(2).replace(' ', '')}" if match else "",
+                "result": (
+                    f"{match.group(1)}, {match.group(2).replace(' ', '')}" if match
+                    else placing.group(1) if placing
+                    else status.group(1).capitalize() if status
+                    else ""
+                ),
                 "home": False if "away-game" in classes else True if "home-game" in classes else None,
+                "neutral": "neutral-game" in classes,
                 "logo": urllib.parse.quote(
                     urllib.parse.urljoin(base_url, html.unescape(logo.group(1))), safe=":/?&=%"
                 ) if logo and base_url else "",
             }
         )
     if len(details) != len(events):
-        details = [{"id": "", "result": "", "home": None, "logo": ""}] * len(events)
+        details = [{"id": "", "result": "", "home": None, "neutral": False, "logo": ""}] * len(events)
 
     games = []
     for event, detail in zip(events, details):
@@ -137,20 +149,21 @@ def parse(page, base_url=""):
         opponent = away if _is_us(home) else home
         # The site lists Assumption as "home" for every game, so trust the page's home/away label,
         # then the event name ("Assumption University At Pace University").
-        at_home = detail["home"]
-        if at_home is None:
+        at_home = None if detail["neutral"] else detail["home"]
+        if at_home is None and not detail["neutral"]:
             at_home = " at " not in f" {event.get('name', '').lower()} "
         place = event.get("location") or {}
         venue = place.get("name") or (place.get("address") or {}).get("streetAddress") or ""
         start_time = start.time()
-        if start_time == time(0, 0):  # time not announced yet
+        time_tba = start_time == time(0, 0)  # the site uses midnight for "time not announced"
+        if time_tba:
             start_time = time(12, 0)
         end = datetime.combine(start.date(), start_time) + GAME_LENGTH
         end_time = end.time() if end.date() == start.date() else time(23, 59)
         games.append(
             Game(
                 external_id=game_id or f"{start.date().isoformat()}:{opponent}",
-                title=f"{'vs.' if at_home else 'at'} {opponent}",
+                title=f"{'at' if at_home is False else 'vs.'} {opponent}",
                 date=start.date(),
                 start_time=start_time,
                 end_time=end_time,
@@ -159,6 +172,7 @@ def parse(page, base_url=""):
                 opponent=opponent,
                 opponent_logo=detail["logo"],
                 is_home=at_home,
+                time_tba=time_tba,
             )
         )
     return games
@@ -240,11 +254,15 @@ def game_hub(team, now=None):
     for game in games:
         game.kickoff = timezone.make_aware(datetime.combine(game.date, game.start_time), tz)
         game.final_whistle = timezone.make_aware(datetime.combine(game.date, game.end_time), tz)
-    live = next((g for g in games if g.kickoff <= now < g.final_whistle and not g.result), None)
+    live = next((g for g in games if g.kickoff <= now < g.final_whistle and not g.result and not g.time_tba), None)
     upcoming = [g for g in games if g.kickoff > now and not g.result]
-    played = [g for g in games if g.result]
+    played = [g for g in games if g.result and not g.is_cancelled]
+    scored = any(g.outcome for g in played) or not played and any(g.is_home is not None for g in games)
     return {
         "team": team,
+        "sport": team.name.removeprefix("Assumption ").strip() or team.name,
+        "event_word": "game" if scored else "event",
+        "results_word": "scores" if scored else "results",
         "live_game": live,
         "next_game": upcoming[0] if upcoming else None,
         "recent": list(reversed(played))[:3],

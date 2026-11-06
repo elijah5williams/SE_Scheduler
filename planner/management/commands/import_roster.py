@@ -20,12 +20,10 @@ from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from django.utils import timezone
 
-from planner.models import Profile, StaffMember, Team
+from planner.models import Profile
+from planner.roster import SCHOOL_DOMAIN, import_person, password_hash, team_name_for
 
-SCHOOL_NAME = "Assumption"
-SCHOOL_DOMAIN = "assumption.edu"
 
 ROLE_ALIASES = {
     "athlete": Profile.STUDENT,
@@ -36,13 +34,6 @@ ROLE_ALIASES = {
     "assistant coach": Profile.COACH,
 }
 REQUIRED_COLUMNS = {"first_name", "last_name", "email", "role", "sport"}
-
-
-def team_name_for(sport):
-    sport = " ".join(sport.split())
-    if sport.lower().startswith(SCHOOL_NAME.lower() + " "):
-        return sport
-    return f"{SCHOOL_NAME} {sport}"
 
 
 class Command(BaseCommand):
@@ -77,6 +68,7 @@ class Command(BaseCommand):
         if password and send_invites:
             raise CommandError("Use either --password or --send-invites, not both.")
         self.password = password
+        self.hashed_password = password_hash(password)
         rows = self._read_rows(csv_path, allow_other_domains)
 
         stats = {"users_created": 0, "users_existing": 0, "teams_created": 0}
@@ -153,69 +145,7 @@ class Command(BaseCommand):
         return rows
 
     def _import_row(self, row, stats, new_users):
-        user = User.objects.filter(email__iexact=row["email"]).first()
-        if user is None:
-            user = User(
-                username=self._unique_username(row["email"]),
-                email=row["email"],
-                first_name=row["first_name"],
-                last_name=row["last_name"],
-                is_active=True,  # the school roster stands in for the email check
-            )
-            user.set_unusable_password()
-            user.save()  # signal creates the profile
-            stats["users_created"] += 1
-            new_users.append(user)
-        else:
-            stats["users_existing"] += 1
-
-        if self.password and not user.check_password(self.password):
-            user.set_password(self.password)
-            user.save(update_fields=["password"])
-
-        profile = user.profile
-        if profile.role != Profile.COACH:  # a coach listed on two teams stays a coach
-            profile.role = row["role"]
-        profile.school_email = row["email"]
-        profile.email_verified = True
-        profile.verification_status = Profile.VERIFIED
-        profile.verified_role = profile.role
-        profile.verified_at = profile.verified_at or timezone.now()
-        profile.save()
-
-        team, created = Team.objects.get_or_create(name=team_name_for(row["sport"]))
-        if created:
-            stats["teams_created"] += 1
-
-        if row["role"] == Profile.COACH:
-            title = row["title"]
-            is_head = "head coach" in title.lower()
-            if team.coach is None or (is_head and team.coach != user):
-                team.coach = user
-                team.save(update_fields=["coach"])
-            staff, _ = StaffMember.objects.get_or_create(
-                team=team,
-                user=user,
-                defaults={
-                    "title": title or ("Head Coach" if team.coach == user else "Assistant Coach"),
-                    "order": row["order"],
-                },
-            )
-            if title and staff.title != title:
-                staff.title = title
-                staff.save(update_fields=["title"])
-        else:
-            team.athletes.add(user)
-            for assignment in team.assignments.all():
-                assignment.push_to(user)
-
-    def _unique_username(self, email):
-        base = email.split("@", 1)[0][:140]
-        username, n = base, 1
-        while User.objects.filter(username=username).exists():
-            n += 1
-            username = f"{base}{n}"
-        return username
+        import_person(row, stats, hashed_password=self.hashed_password, reset_password=True, new_users=new_users)
 
     def _send_invites(self, users):
         for user in users:

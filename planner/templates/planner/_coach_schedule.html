@@ -1,13 +1,12 @@
 {% if team.hub and team.hub.games %}
   <section class="schedule-block" aria-label="{{ team.name }} game schedule">
     <div class="sched-head">
-      <h3>Season schedule<span>{{ team.hub.games|length }} games</span></h3>
+      <h3>Season schedule<span>{{ team.hub.games|length }} event{{ team.hub.games|length|pluralize }}</span></h3>
       <span class="sched-source">Synced from the athletics website</span>
     </div>
     <ol class="sched">
       {% for g in team.hub.games %}
-        {% with outcome=g.result|slice:":1" %}
-        <li class="sched-row{% if team.hub.next_game and g.pk == team.hub.next_game.pk %} is-next{% endif %}{% if g.result %} is-final{% endif %}">
+        <li class="sched-row{% if team.hub.next_game and g.pk == team.hub.next_game.pk %} is-next{% endif %}{% if g.result %} is-final{% endif %}{% if g.is_cancelled %} is-cancelled{% endif %}">
           <div class="sched-date">
             <span class="sched-month">{{ g.date|date:"M" }}</span>
             <span class="sched-day">{{ g.date|date:"j" }}</span>
@@ -19,23 +18,24 @@
               <span>{{ g.opponent|slice:":1" }}</span>
             </span>
             <span class="sched-opp-text">
-              <span class="sched-opp-name"><span class="sched-ha">{% if g.is_home %}vs.{% else %}at{% endif %}</span> {{ g.opponent|default:g.title }}</span>
-              <span class="sched-venue">{% if g.is_home %}<span class="tag home">Home</span>{% else %}<span class="tag away">Away</span>{% endif %}{{ g.location }}</span>
+              <span class="sched-opp-name"><span class="sched-ha">{{ g.matchup_word }}</span> {{ g.opponent|default:g.title }}</span>
+              <span class="sched-venue">{% if g.is_home %}<span class="tag home">Home</span>{% elif g.is_home is False %}<span class="tag away">Away</span>{% else %}<span class="tag neutral">Neutral</span>{% endif %}{{ g.location }}</span>
             </span>
           </div>
           <div class="sched-result">
-            {% if g.result %}
-              <span class="outcome {% if outcome == 'W' %}win{% elif outcome == 'L' %}loss{% else %}tie{% endif %}">{{ outcome }}</span>
-              <span class="score">{{ g.result|slice:"3:" }}</span>
-            {% elif team.hub.next_game and g.pk == team.hub.next_game.pk %}
-              <span class="next-tag">Next</span>
-              <span class="kick">{{ g.start_time|time:"g:i A" }}</span>
+            {% if g.is_cancelled %}
+              <span class="status-tag">{{ g.result }}</span>
+            {% elif g.outcome %}
+              <span class="outcome {% if g.outcome == 'W' %}win{% elif g.outcome == 'L' %}loss{% else %}tie{% endif %}">{{ g.outcome }}</span>
+              <span class="score">{{ g.score }}</span>
+            {% elif g.result %}
+              <span class="placing">{{ g.result }}</span>
             {% else %}
-              <span class="kick">{{ g.start_time|time:"g:i A" }}</span>
+              {% if team.hub.next_game and g.pk == team.hub.next_game.pk %}<span class="next-tag">Next</span>{% endif %}
+              <span class="kick">{% if g.time_tba %}TBA{% else %}{{ g.start_time|time:"g:i A" }}{% endif %}</span>
             {% endif %}
           </div>
         </li>
-        {% endwith %}
       {% endfor %}
     </ol>
   </section>

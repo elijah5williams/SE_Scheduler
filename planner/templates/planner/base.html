@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="A smart academic planner for college student-athletes.">
     <title>{% block title %}Athlete Academic Assistant{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'planner/styles.css' %}?v=2026-11-06b">
-    {% if user.profile.role == 'coach' %}<link rel="stylesheet" href="{% static 'planner/coach.css' %}?v=2026-11-06b">{% endif %}
+    <link rel="stylesheet" href="{% static 'planner/styles.css' %}?v=2026-11-06d">
+    {% if user.profile.role == 'coach' %}<link rel="stylesheet" href="{% static 'planner/coach.css' %}?v=2026-11-06d">{% endif %}
 </head>
 <body>
     <div class="app-shell">
@@ -108,6 +108,6 @@
         </main>
     </div>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
-    <script src="{% static 'planner/app.js' %}?v=2026-11-06b"></script>
+    <script src="{% static 'planner/app.js' %}?v=2026-11-06d"></script>
 </body>
 </html>

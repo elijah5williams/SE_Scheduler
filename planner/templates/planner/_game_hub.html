@@ -9,8 +9,8 @@ Expects `hub` from planner.schedule_sync.game_hub().
       {% with game=live|default:next %}
       {% if game %}
         <div class="gh-eyebrow">
-          {% if live %}<span class="gh-live-dot"></span>Live now{% else %}Next game{% endif %}
-          · {{ game.date|date:"D, M j" }} · {{ game.start_time|time:"g:i A" }}
+          {{ hub.sport }} · {% if live %}<span class="gh-live-dot"></span>Live now{% else %}Next {{ hub.event_word }}{% endif %}
+          · {{ game.date|date:"D, M j" }} · {% if game.time_tba %}Time TBA{% else %}{{ game.start_time|time:"g:i A" }}{% endif %}
         </div>
         <div class="gh-teams">
           <div class="gh-team">
@@ -20,7 +20,7 @@ Expects `hub` from planner.schedule_sync.game_hub().
             </span>
             <span class="gh-team-name">{{ team.school_name }}</span>
           </div>
-          <span class="gh-vs">{% if game.is_home %}vs.{% else %}at{% endif %}</span>
+          <span class="gh-vs">{{ game.matchup_word }}</span>
           <div class="gh-team">
             <span class="gh-logo">
               {% if game.opponent_logo %}<img src="{{ game.opponent_logo }}" alt="" loading="lazy" onerror="this.remove()">{% endif %}
@@ -32,6 +32,8 @@ Expects `hub` from planner.schedule_sync.game_hub().
         {% if game.location %}<p class="gh-where">{{ game.location }}</p>{% endif %}
         {% if live %}
           <p class="gh-live-note">The final score shows here once it's posted.</p>
+        {% elif game.time_tba %}
+          <p class="gh-live-note">Start time to be announced.</p>
         {% else %}
           <div class="gh-countdown" data-kickoff="{{ game.kickoff|date:'c' }}" aria-live="off">
             <div><strong data-unit="d">–</strong><span>days</span></div>
@@ -41,21 +43,25 @@ Expects `hub` from planner.schedule_sync.game_hub().
           </div>
         {% endif %}
       {% else %}
-        <div class="gh-eyebrow">Season complete</div>
-        <p class="gh-where">No games left on the schedule.</p>
+        <div class="gh-eyebrow">{{ hub.sport }} · Season complete</div>
+        <p class="gh-season-done">No {{ hub.event_word }}s left this season.</p>
       {% endif %}
       {% endwith %}
     </div>
 
     {% if hub.recent %}
       <div class="gh-recent">
-        <div class="gh-eyebrow">Recent scores</div>
+        <div class="gh-eyebrow">Recent {{ hub.results_word }}</div>
         <ul>
           {% for g in hub.recent %}
             <li>
-              <span class="gh-badge {% if g.result|slice:':1' == 'W' %}win{% elif g.result|slice:':1' == 'L' %}loss{% endif %}">{{ g.result|slice:":1" }}</span>
-              <span class="gh-recent-opp">{% if g.is_home %}vs.{% else %}at{% endif %} {{ g.opponent }}</span>
-              <span class="gh-recent-score">{{ g.result|slice:"3:" }}</span>
+              {% if g.outcome %}
+                <span class="gh-badge {% if g.outcome == 'W' %}win{% elif g.outcome == 'L' %}loss{% endif %}">{{ g.outcome }}</span>
+              {% else %}
+                <span class="gh-badge meet" title="Meet result">#</span>
+              {% endif %}
+              <span class="gh-recent-opp">{{ g.matchup_word }} {{ g.opponent }}</span>
+              <span class="gh-recent-score">{{ g.score }}</span>
             </li>
           {% endfor %}
         </ul>

@@ -1,3 +1,4 @@
+import re
 import secrets
 from datetime import datetime
 
@@ -428,7 +429,8 @@ class Assignment(models.Model):
     result = models.CharField(max_length=40, blank=True)
     opponent = models.CharField(max_length=120, blank=True)
     opponent_logo = models.URLField(blank=True)
-    is_home = models.BooleanField(null=True, blank=True)
+    is_home = models.BooleanField(null=True, blank=True)  # None = neutral site
+    time_tba = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -440,6 +442,24 @@ class Assignment(models.Model):
     @property
     def is_synced(self):
         return bool(self.external_id)
+
+    @property
+    def outcome(self):
+        """"W", "L" or "T" for a scored game; "" for meets, cancellations and unplayed games."""
+        return self.result[:1] if re.match(r"^[WLT], ", self.result or "") else ""
+
+    @property
+    def score(self):
+        """The score for W/L/T results ("34-27"), otherwise the result as posted ("6th (176)")."""
+        return self.result[3:] if self.outcome else self.result
+
+    @property
+    def is_cancelled(self):
+        return (self.result or "").lower().startswith(("cancel", "postpone"))
+
+    @property
+    def matchup_word(self):
+        return "at" if self.is_home is False else "vs."
 
     def clean(self):
         if self.end_time and self.start_time and self.end_time <= self.start_time:
