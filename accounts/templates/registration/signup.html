@@ -3,42 +3,25 @@
 {% block content %}
   <style>
     .role-field { border: 0; padding: 0; margin: 1.25rem 0; min-width: 0; }
-    .role-field legend { padding: 0; margin-bottom: .45rem; font-weight: 700; }
-    .role-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: .65rem; }
+    .role-field legend { padding: 0; margin-bottom: .55rem; font-size: 13px; font-weight: 700; color: var(--soft); }
+    .role-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; }
     .role-option {
-      position: relative;
-      display: block;
-      margin: 0;
-      padding: .8rem .95rem;
-      border: 1px solid #aab4af;
-      border-radius: 10px;
-      font-weight: 400;
-      cursor: pointer;
+      position: relative; display: block; margin: 0; padding: .8rem .9rem;
+      border: 1px solid var(--line-strong); border-radius: 13px;
+      background: var(--field); cursor: pointer;
       transition: border-color .15s, background .15s, box-shadow .15s;
     }
-    .role-option:hover { border-color: #7d8a84; }
-    .role-option input {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      pointer-events: none;
-    }
-    .role-title { display: block; font-weight: 600; }
-    .role-desc { display: block; margin-top: .15rem; font-size: .8rem; color: #5b676e; line-height: 1.35; }
-    .role-option:has(input:checked) {
-      border-color: #386f4f;
-      background: #eaf3ed;
-      box-shadow: 0 0 0 1px #386f4f;
-    }
-    .role-option:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(56, 111, 79, .3); }
-    .field-hint { display: block; margin-top: .35rem; font-size: .85rem; color: #5b676e; }
-    .field-error { margin: .4rem 0 0; padding: 0; list-style: none; font-size: .88rem; color: #b3261e; }
+    .role-option:hover { background: var(--field-hover); }
+    .role-option input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+    .role-title { display: block; font-weight: 700; color: var(--text); }
+    .role-desc { display: block; margin-top: .15rem; font-size: .78rem; color: var(--muted); line-height: 1.35; }
+    .role-option:has(input:checked) { border-color: var(--gold); background: rgba(231, 174, 72, .1); box-shadow: 0 0 0 1px var(--gold); }
+    .role-option:has(input:focus-visible) { box-shadow: 0 0 0 4px rgba(231, 174, 72, .25); }
     @media (max-width: 560px) { .role-options { grid-template-columns: 1fr; } }
   </style>
 
   <h1>Create your account</h1>
-  <p class="lede">Set up a login to start planning your week.</p>
+  <p class="lede">Use your Assumption email to get started.</p>
 
   <form method="post" novalidate>
     {% csrf_token %}
@@ -91,5 +74,6 @@
     <button type="submit">Create account</button>
   </form>
 
-  <p class="switch">Already have an account? <a href="{% url 'login' %}">Log in</a></p>
+  <div class="divider">Already have an account?</div>
+  <a class="secondary" href="{% url 'login' %}">Log in</a>
 {% endblock %}

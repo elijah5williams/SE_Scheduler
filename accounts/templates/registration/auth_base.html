@@ -1,137 +1,247 @@
 {% comment %}
-  Shared layout for the login and sign-up pages. Self-contained on purpose
-  (inline CSS, system fonts) so it works no matter what your main base.html looks like.
+  Shared dark layout for the login and sign-up pages. Self-contained (inline CSS, system fonts)
+  so it renders the same whether or not the user is signed in.
 {% endcomment %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
   <title>{% block title %}Athlete Academic Assistant{% endblock %}</title>
   <style>
     :root {
-      --ink: #172026;
-      --muted: #55636b;
-      --paper: #eef2ef;
-      --card: #ffffff;
-      --line: #cfd8d3;
-      --green: #1f6f4a;
-      --green-dark: #17553a;
-      --blue: #2f5d9e;
-      --gold: #f2b705;
-      --danger: #a3271f;
+      --bg: #060c17;
+      --panel: rgba(15, 25, 43, .78);
+      --field: #0d1626;
+      --field-hover: #111c30;
+      --line: rgba(255, 255, 255, .09);
+      --line-strong: rgba(255, 255, 255, .16);
+      --text: #eef3f9;
+      --muted: #8e9db1;
+      --soft: #b9c6d6;
+      --gold: #e7ae48;
+      --gold-2: #f3c56b;
+      --green: #2fbf8f;
+      --danger: #ff7a70;
     }
     * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
     body {
       margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-      background: var(--paper);
-      color: var(--ink);
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 600px at 12% -10%, rgba(231, 174, 72, .16), transparent 60%),
+        radial-gradient(800px 700px at 100% 110%, rgba(18, 56, 97, .55), transparent 60%),
+        var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
     }
-    .shell {
-      width: 100%;
-      max-width: 880px;
+    a { color: var(--gold); font-weight: 600; text-decoration: none; }
+    a:hover { color: var(--gold-2); text-decoration: underline; }
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+
+    .auth {
+      min-height: 100vh;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 40px 32px;
       display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      overflow: hidden;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 460px);
+      gap: 64px;
+      align-items: center;
     }
-    .panel { padding: 40px 36px; max-width: 460px; width: 100%; margin: 0 auto; }
-    h1 { margin: 0 0 6px; font-size: 2rem; line-height: 1.15; letter-spacing: -0.02em; }
+
+    /* Left: brand */
+    .brand { display: inline-flex; align-items: center; gap: 14px; color: var(--text); text-decoration: none; }
+    .brand:hover { text-decoration: none; color: var(--text); }
+    .brand-mark {
+      position: relative; flex: none;
+      width: 54px; height: 54px; border-radius: 16px;
+      background: #fff; display: grid; place-items: center; overflow: hidden;
+      font: 800 26px Georgia, serif; color: #0a2240;
+      box-shadow: 0 0 0 6px rgba(231, 174, 72, .12), 0 18px 40px rgba(0, 0, 0, .35);
+    }
+    .brand-mark img { position: absolute; inset: 7px; width: calc(100% - 14px); height: calc(100% - 14px); object-fit: contain; background: #fff; }
+    .brand strong { display: block; font-size: 17px; }
+    .brand small { display: block; color: var(--muted); font-size: 13px; }
+
+    .pitch { margin-top: 64px; max-width: 540px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin: 0 0 18px; padding: 6px 12px;
+      border: 1px solid rgba(231, 174, 72, .35); border-radius: 999px;
+      background: rgba(231, 174, 72, .08);
+      color: var(--gold-2); font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+    }
+    .eyebrow::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 10px var(--gold); }
+    .pitch h2 { margin: 0 0 18px; font: 700 clamp(38px, 4.4vw, 60px)/1.04 Georgia, "Times New Roman", serif; letter-spacing: -.02em; }
+    .pitch h2 em { font-style: normal; color: var(--gold); }
+    .pitch > p { margin: 0 0 34px; color: var(--soft); font-size: 17px; max-width: 470px; }
+
+    .features { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .features li {
+      padding: 16px; border-radius: 16px;
+      background: rgba(255, 255, 255, .035);
+      border: 1px solid var(--line);
+    }
+    .features svg { width: 22px; height: 22px; color: var(--gold); }
+    .features strong { display: block; margin-top: 10px; font-size: 14px; }
+    .features span { display: block; margin-top: 2px; color: var(--muted); font-size: 13px; line-height: 1.4; }
+
+    /* Right: form card */
+    .card {
+      position: relative;
+      width: 100%;
+      padding: 40px 36px 34px;
+      border-radius: 24px;
+      background: var(--panel);
+      border: 1px solid var(--line-strong);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .06);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    .card::before {
+      content: ""; position: absolute; left: 36px; right: 36px; top: -1px; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      border-radius: 2px;
+    }
+    h1 { margin: 0 0 6px; font: 700 30px/1.15 Georgia, "Times New Roman", serif; }
     .lede { margin: 0 0 28px; color: var(--muted); }
 
     .field { margin-bottom: 18px; }
-    .field label { display: block; margin-bottom: 6px; font-weight: 600; }
-    .field input {
+    .field > label, .label-row label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 700; color: var(--soft); letter-spacing: .01em; }
+    .label-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+    .label-row a { font-size: 13px; }
+    .input { position: relative; }
+    .input svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--muted); pointer-events: none; transition: color .15s; }
+    .field input:not([type=radio]):not([type=checkbox]) {
       width: 100%;
-      padding: 11px 12px;
-      font: inherit;
-      color: var(--ink);
-      background: #fff;
-      border: 1px solid #93a29b;
-      border-radius: 6px;
+      height: 52px;
+      padding: 0 16px;
+      font: inherit; font-size: 15px;
+      color: var(--text);
+      background: var(--field);
+      border: 1px solid var(--line-strong);
+      border-radius: 13px;
+      transition: border-color .15s, box-shadow .15s, background .15s;
     }
+    .input input { padding-left: 46px !important; }
+    .field input::placeholder { color: #5f6f84; }
+    .field input:hover { background: var(--field-hover); }
+    .field input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 4px rgba(231, 174, 72, .15); }
+    .input:focus-within svg { color: var(--gold); }
     .field input[aria-invalid="true"] { border-color: var(--danger); }
-    .help { margin-top: 6px; font-size: 0.85rem; color: var(--muted); }
-    .help ul { margin: 0; padding-left: 18px; }
-    .error { margin: 6px 0 0; font-size: 0.9rem; color: var(--danger); font-weight: 600; }
-    .error-box { margin: 0 0 20px; padding: 10px 12px; border-left: 4px solid var(--danger); background: #fbeceb; color: var(--danger); font-weight: 600; }
-
-    button {
-      width: 100%;
-      padding: 12px 16px;
-      font: inherit;
-      font-weight: 700;
-      color: #fff;
-      background: var(--green);
-      border: 0;
-      border-radius: 6px;
-      cursor: pointer;
+    .password input { padding-right: 72px !important; }
+    .reveal {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      height: 34px; padding: 0 12px;
+      background: rgba(255, 255, 255, .06); color: var(--soft);
+      border: 0; border-radius: 9px;
+      font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
     }
-    button:hover { background: var(--green-dark); }
-    a { color: var(--green-dark); }
-    :focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
-    .switch { margin: 22px 0 0; color: var(--muted); }
+    .reveal:hover { background: rgba(255, 255, 255, .12); color: var(--text); }
+    .help, .field-hint { display: block; margin-top: 6px; font-size: 13px; color: var(--muted); }
+    .help ul { margin: 0; padding-left: 18px; }
+    .error, .field-error { margin: 6px 0 0; padding: 0; list-style: none; font-size: 13px; color: var(--danger); font-weight: 600; }
 
-    /* Decorative "today" column: shows how classes, practice and study blocks stack in a day. */
-    .day { display: none; }
-    @media (min-width: 800px) {
-      .shell { grid-template-columns: minmax(0, 1fr) 320px; }
-      .day {
-        display: block;
-        padding: 40px 28px;
-        background: var(--ink);
-        color: #e8eeea;
-      }
-      .day h2 { margin: 0 0 18px; font-size: 1rem; font-weight: 600; color: #b9c6bf; }
-      .grid { position: relative; height: 420px; margin-left: 46px; border-left: 1px solid #3a474f; }
-      .tick { position: absolute; left: -46px; width: 38px; text-align: right; font-size: 0.75rem; color: #9fb0a8; transform: translateY(-50%); }
-      .tick::after { content: ""; position: absolute; left: 46px; width: 240px; border-top: 1px solid #2a353c; }
-      .block {
-        position: absolute;
-        left: 8px; right: 0;
-        top: calc(var(--start) * 30px);
-        height: calc(var(--len) * 30px - 3px);
-        padding: 4px 10px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        border-radius: 4px;
-        overflow: hidden;
-      }
-      .block.class { background: var(--blue); color: #fff; }
-      .block.practice { background: var(--gold); color: var(--ink); }
-      .block.study { background: transparent; color: #dff3e8; border: 2px dashed #5fc596; }
-      .legend { margin: 14px 0 0 46px; font-size: 0.8rem; color: #9fb0a8; }
+    .notice, .error-box { margin: 0 0 20px; padding: 12px 14px; border-radius: 12px; font-size: 14px; font-weight: 600; }
+    .error-box, .notice.error { background: rgba(255, 122, 112, .1); color: var(--danger); border: 1px solid rgba(255, 122, 112, .3); }
+    .notice.success, .notice.info { background: rgba(47, 191, 143, .1); color: #7fe0bd; border: 1px solid rgba(47, 191, 143, .3); }
+
+    button[type=submit] {
+      width: 100%; height: 54px; margin-top: 8px;
+      font: inherit; font-size: 16px; font-weight: 800; letter-spacing: .01em;
+      color: #1b1407;
+      background: linear-gradient(180deg, var(--gold-2), var(--gold));
+      border: 0; border-radius: 13px; cursor: pointer;
+      box-shadow: 0 14px 30px rgba(231, 174, 72, .25), inset 0 1px 0 rgba(255, 255, 255, .4);
+      transition: transform .15s, box-shadow .15s, filter .15s;
+    }
+    button[type=submit]:hover { transform: translateY(-1px); filter: brightness(1.05); box-shadow: 0 18px 36px rgba(231, 174, 72, .32), inset 0 1px 0 rgba(255, 255, 255, .4); }
+    button[type=submit]:active { transform: translateY(0); }
+
+    .divider { display: flex; align-items: center; gap: 12px; margin: 26px 0 16px; color: var(--muted); font-size: 13px; }
+    .divider::before, .divider::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+    .switch { margin: 0; text-align: center; color: var(--muted); font-size: 14px; }
+    .secondary {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      height: 50px; border-radius: 13px;
+      border: 1px solid var(--line-strong); background: rgba(255, 255, 255, .03);
+      color: var(--text); font-weight: 700;
+    }
+    .secondary:hover { background: rgba(255, 255, 255, .07); color: var(--text); text-decoration: none; }
+    .fine { margin: 20px 0 0; text-align: center; color: #6f7f93; font-size: 12px; }
+
+    @media (max-width: 980px) {
+      .auth { grid-template-columns: 1fr; gap: 28px; padding: 24px 16px 40px; max-width: 520px; }
+      .pitch { margin-top: 28px; }
+      .pitch h2 { font-size: 36px; }
+      .pitch > p, .features { display: none; }
+      .card { padding: 30px 22px 26px; border-radius: 20px; }
+      .card::before { left: 22px; right: 22px; }
+      h1 { font-size: 26px; }
     }
   </style>
 </head>
 <body>
-  <main class="shell">
-    <section class="panel">
-      {% block content %}{% endblock %}
+  <div class="auth">
+    <section aria-label="About Athlete Academic Assistant">
+      <a class="brand" href="{% url 'login' %}">
+        <span class="brand-mark">
+          <img src="https://assumptiongreyhounds.com/images/logos/site/site.png" alt="" onerror="this.remove()">
+          A
+        </span>
+        <span>
+          <strong>Athlete Academic Assistant</strong>
+          <small>Assumption University Greyhounds</small>
+        </span>
+      </a>
+
+      <div class="pitch">
+        <p class="eyebrow">Built for Greyhounds</p>
+        <h2>School. Sport.<br><em>Success.</em></h2>
+        <p>One schedule for your classes, practices, games and study time, so nothing gets missed.</p>
+        <ul class="features">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <strong>Live schedules</strong>
+            <span>Games, scores and countdowns for every team.</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            <strong>Smart study plans</strong>
+            <span>Study time placed around class and practice.</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <strong>For coaches too</strong>
+            <span>Send practices straight to your roster.</span>
+          </li>
+        </ul>
+      </div>
     </section>
 
-    <aside class="day" aria-hidden="true">
-      <h2>A day on your schedule</h2>
-      <div class="grid">
-        <span class="tick" style="top: 0">8 AM</span>
-        <span class="tick" style="top: 120px">12 PM</span>
-        <span class="tick" style="top: 240px">4 PM</span>
-        <span class="tick" style="top: 360px">8 PM</span>
-        <div class="block class"    style="--start: 1;   --len: 1.25">Biology lecture</div>
-        <div class="block study"    style="--start: 5;   --len: 1.5">Chem problem set</div>
-        <div class="block practice" style="--start: 7.5; --len: 2.5">Practice</div>
-        <div class="block study"    style="--start: 11.5; --len: 1">Read chapter 7</div>
-      </div>
-      <p class="legend">Dashed blocks are study sessions placed for you.</p>
-    </aside>
-  </main>
+    <main class="card">
+      {% if messages %}
+        {% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <script>
+    document.querySelectorAll("[data-reveal]").forEach(function (button) {
+      var input = document.getElementById(button.getAttribute("data-reveal"));
+      if (!input) return;
+      button.addEventListener("click", function () {
+        var show = input.type === "password";
+        input.type = show ? "text" : "password";
+        button.textContent = show ? "Hide" : "Show";
+        button.setAttribute("aria-pressed", show ? "true" : "false");
+      });
+    });
+  </script>
 </body>
 </html>
