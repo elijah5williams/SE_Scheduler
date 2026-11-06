@@ -11,7 +11,24 @@
   .team-head { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap; }
   .team-head h2 { margin:0; }
   .code { background:#f3efe4; border-radius:8px; padding:.15rem .5rem; font-family:monospace; font-weight:700; }
-  .roster { margin:1rem 0; color:#5b676e; }
+  .team-meta { margin:.5rem 0 0; color:var(--muted); display:flex; flex-wrap:wrap; align-items:center; gap:.4rem .9rem; }
+  .team-meta strong { color:var(--ink); }
+  .roster-block { margin-top:1.5rem; border-top:1px solid var(--line); padding-top:1.25rem; }
+  .roster-bar { display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1rem; }
+  .roster-bar h3 { margin:0; font-size:1.05rem; }
+  .roster-bar h3 span { color:var(--muted); font-weight:600; margin-left:.35rem; }
+  .roster-search { width:min(100%, 280px); padding:.6rem .85rem; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink); }
+  .roster-search:focus { outline:2px solid var(--green); outline-offset:1px; border-color:transparent; }
+  .roster-grid { list-style:none; margin:0; padding:.25rem; display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:.6rem; max-height:440px; overflow-y:auto; }
+  .athlete { display:flex; align-items:center; gap:.75rem; padding:.6rem .75rem; border:1px solid var(--line); border-radius:12px; background:#fbfaf7; min-width:0; }
+  .athlete[hidden] { display:none; }
+  .avatar { flex:none; width:36px; height:36px; border-radius:50%; display:grid; place-items:center; background:var(--navy); color:var(--gold); font-weight:800; font-size:.8rem; letter-spacing:.02em; }
+  .athlete-text { min-width:0; }
+  .athlete-name { display:block; font-weight:700; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .athlete-email { display:block; font-size:.8rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .roster-empty { color:var(--muted); margin:.5rem 0 0; }
+  .schedule-block { margin-top:1.5rem; }
+  .schedule-block h3 { margin:0 0 .25rem; font-size:1.05rem; }
   .assign-row { display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:.75rem 0; border-top:1px solid #eee9dc; }
   .assign-type { font-size:.75rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#2f6f56; }
   .assign-actions a { margin-left:.75rem; font-weight:600; }
@@ -30,20 +47,44 @@
     <div class="team-head">
       <div>
         <h2>{{ team.name }}</h2>
-        <p class="roster">
-          {{ team.athletes.count }} athlete{{ team.athletes.count|pluralize }} ·
-          Join code <span class="code">{{ team.join_code }}</span>
+        <p class="team-meta">
+          {% if team.coach %}<span>Head coach <strong>{{ team.coach.get_full_name|default:team.coach.username }}</strong></span>{% endif %}
+          <span><strong>{{ team.athletes.count }}</strong> athlete{{ team.athletes.count|pluralize }}</span>
+          <span>Join code <span class="code">{{ team.join_code }}</span></span>
         </p>
       </div>
       <a class="coach-btn green" href="{% url 'planner:assignment_create' team.pk %}">+ Assign</a>
     </div>
 
-    {% if team.athletes.all %}
-      <p class="roster">Roster: {% for athlete in team.athletes.all %}{{ athlete.username }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
-    {% else %}
-      <p class="roster">No athletes yet. Share the join code above.</p>
-    {% endif %}
+    <section class="roster-block" aria-label="{{ team.name }} roster">
+      <div class="roster-bar">
+        <h3>Roster<span>{{ team.athletes.count }}</span></h3>
+        {% if team.athletes.all %}
+          <input class="roster-search" type="search" placeholder="Search athletes" aria-label="Search {{ team.name }} athletes" data-roster-search="roster-{{ team.pk }}">
+        {% endif %}
+      </div>
+      {% if team.athletes.all %}
+        <ul class="roster-grid" id="roster-{{ team.pk }}">
+          {% for athlete in team.athletes.all|dictsort:"first_name"|dictsort:"last_name" %}
+            <li class="athlete" data-search="{{ athlete.get_full_name|lower }} {{ athlete.email|lower }} {{ athlete.username|lower }}">
+              <span class="avatar" aria-hidden="true">{% if athlete.first_name %}{{ athlete.first_name|slice:":1"|upper }}{{ athlete.last_name|slice:":1"|upper }}{% else %}{{ athlete.username|slice:":2"|upper }}{% endif %}</span>
+              <span class="athlete-text">
+                <span class="athlete-name">{{ athlete.get_full_name|default:athlete.username }}</span>
+                <span class="athlete-email">{{ athlete.email|default:athlete.username }}</span>
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+        <p class="roster-empty" id="roster-{{ team.pk }}-none" hidden>No athletes match that search.</p>
+      {% else %}
+        <p class="roster-empty">No athletes yet. Share the join code above.</p>
+      {% endif %}
+    </section>
 
+    {% if team.assignments.all %}
+      <section class="schedule-block">
+        <h3>Team schedule</h3>
+    {% endif %}
     {% for a in team.assignments.all %}
       <div class="assign-row">
         <div>
@@ -59,10 +100,28 @@
         </div>
       </div>
     {% endfor %}
+    {% if team.assignments.all %}</section>{% endif %}
   </article>
 {% empty %}
   <article class="team-card">
     <p class="empty">You don't have a team yet. Create one to get a join code for your athletes.</p>
   </article>
 {% endfor %}
+
+<script>
+  document.querySelectorAll("[data-roster-search]").forEach(function (input) {
+    var list = document.getElementById(input.dataset.rosterSearch);
+    var none = document.getElementById(input.dataset.rosterSearch + "-none");
+    input.addEventListener("input", function () {
+      var q = input.value.trim().toLowerCase();
+      var shown = 0;
+      list.querySelectorAll(".athlete").forEach(function (item) {
+        var match = !q || item.dataset.search.indexOf(q) !== -1;
+        item.hidden = !match;
+        if (match) shown++;
+      });
+      none.hidden = shown !== 0;
+    });
+  });
+</script>
 {% endblock %}
