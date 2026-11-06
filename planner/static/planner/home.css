@@ -40,7 +40,8 @@ a { color: inherit; }
 .stage {
     position: relative; z-index: 1;
     max-width: 1360px; margin: 0 auto;
-    height: clamp(620px, calc(100vh - 92px), 860px);
+    height: clamp(600px, calc(100vh - 150px), 840px);
+    margin-top: 18px;
     padding: 0 32px;
 }
 .word {
@@ -130,7 +131,7 @@ a { color: inherit; }
 .ticket-go { display: block; margin-top: 14px; font-size: 12px; font-weight: 700; color: #a9cdf5; }
 
 /* Score ticker */
-.ticker { position: relative; z-index: 2; display: flex; align-items: stretch; background: linear-gradient(180deg, #1c2029, var(--charcoal-2)); color: #fff; overflow: hidden; }
+.ticker { position: relative; z-index: 2; display: flex; align-items: stretch; max-width: 1296px; margin: 0 auto; border-radius: 16px; box-shadow: 0 14px 34px rgba(20, 23, 29, .22); background: linear-gradient(180deg, #1c2029, var(--charcoal-2)); color: #fff; overflow: hidden; }
 .ticker-label { flex: none; display: grid; place-items: center; padding: 0 20px; background: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 .ticker-track { overflow: hidden; flex: 1; -webkit-mask: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); mask: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); }
 .ticker-move { display: flex; width: max-content; animation: marquee 60s linear infinite; }
@@ -208,3 +209,6 @@ a { color: inherit; }
     .spot-info strong { margin: 12px 0 14px; }
     .spot-info dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+@media (max-width: 1360px) { .ticker { margin: 0 32px; } }
+@media (max-width: 980px) { .ticker { margin: 4px 16px 0; } .stage { margin-top: 8px; } }

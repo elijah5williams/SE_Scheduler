@@ -9,11 +9,29 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,700;6..96,800&family=Pinyon+Script&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'planner/topnav.css' %}?v=2026-11-08">
-  <link rel="stylesheet" href="{% static 'planner/home.css' %}?v=2026-11-08b">
+  <link rel="stylesheet" href="{% static 'planner/home.css' %}?v=2026-11-08c">
 </head>
 <body>
   {% with profile=user.profile %}
   {% include "planner/_topnav.html" %}
+
+  {% if ticker %}
+  <section class="ticker" aria-label="Latest Greyhound results">
+    <div class="ticker-label">Live scores</div>
+    <div class="ticker-track">
+      <div class="ticker-move">
+        {% for pass in "ab" %}
+          {% for g in ticker %}
+            <span class="tick"{% if pass == "b" %} aria-hidden="true"{% endif %}>
+              {% if g.outcome %}<b class="o-{{ g.outcome }}">{{ g.outcome }} {{ g.score }}</b>{% else %}<b>{{ g.result }}</b>{% endif %}
+              {{ g.team.name|cut:"Assumption " }} {{ g.matchup_word }} {{ g.opponent }}
+            </span>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
 
   <main class="stage">
     <h1 class="sr-only">School. Sport. Success.</h1>
@@ -72,23 +90,6 @@
     </a>
   </main>
 
-  {% if ticker %}
-  <section class="ticker" aria-label="Latest Greyhound results">
-    <div class="ticker-label">Live scores</div>
-    <div class="ticker-track">
-      <div class="ticker-move">
-        {% for pass in "ab" %}
-          {% for g in ticker %}
-            <span class="tick"{% if pass == "b" %} aria-hidden="true"{% endif %}>
-              {% if g.outcome %}<b class="o-{{ g.outcome }}">{{ g.outcome }} {{ g.score }}</b>{% else %}<b>{{ g.result }}</b>{% endif %}
-              {{ g.team.name|cut:"Assumption " }} {{ g.matchup_word }} {{ g.opponent }}
-            </span>
-          {% endfor %}
-        {% endfor %}
-      </div>
-    </div>
-  </section>
-  {% endif %}
 
   {% if bios %}
   <section class="spotlight" aria-label="Meet the Greyhounds">
