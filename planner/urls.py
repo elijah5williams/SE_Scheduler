@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import app_views, views
 
 
 app_name = "planner"
@@ -36,4 +36,11 @@ urlpatterns = [
     path("coach/assignments/<int:pk>/edit/", views.assignment_update, name="assignment_update"),
     path("coach/assignments/<int:pk>/delete/", views.assignment_delete, name="assignment_delete"),
     path("team/join/", views.team_join, name="team_join"),
+    # Installed phone app only
+    path("app/more/", app_views.more, name="app_more"),
+    path("app/status.json", app_views.status, name="app_status"),
+    path("app/offline-data.json", app_views.offline_data, name="app_offline_data"),
+    path("app/push/subscribe/", app_views.push_subscribe, name="push_subscribe"),
+    path("app/push/unsubscribe/", app_views.push_unsubscribe, name="push_unsubscribe"),
+    path("app/push/test/", app_views.push_test, name="push_test"),
 ]

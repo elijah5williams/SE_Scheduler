@@ -208,10 +208,36 @@ The planner uses built-in scheduling intelligence, so it works without a paid AP
 
 ## Install it as a phone app
 
-The site is an installable web app, so athletes can put it on their home screen like any other app. It opens full screen with its own icon, and shows a friendly page when there's no connection.
+The site is an installable web app, so athletes can put it on their home screen like any other app.
 
 - **iPhone (Safari):** open the site, tap **Share**, then **Add to Home Screen**.
-- **Android (Chrome):** open the site, tap **⋮**, then **Install app** (or accept the install banner).
+- **Android (Chrome):** open the site, tap **⋮**, then **Install app** (or tap **Install** on the "Get the app" banner).
 - **Laptop (Chrome/Edge):** click the install icon in the address bar.
 
-Installing needs HTTPS, which Render provides. The app files are in `planner/pwa.py` (manifest, service worker, offline page) and `planner/static/planner/icons/`. Schedule pages are never saved on the phone, because they hold private data. After you change `planner/templates/planner/sw.js` or the offline page, bump `CACHE_VERSION` in `planner/pwa.py` so phones pick up the new version.
+### What the app adds
+
+These only appear when it's opened from the home screen; the website stays the same.
+
+- **Tab bar** at the bottom: Today, Schedule, **+**, Planner, More (coaches: Team, Schedule, +, Roster, More).
+- **+ button** to add academic work, a commitment, a routine, or (coaches) assign a team event.
+- **Pull down to refresh.**
+- **Number on the app icon** showing what's left to do today.
+- **Offline schedule:** the next two weeks are saved on the phone, so they show with no signal. Logging out deletes them.
+- **Phone notifications** when a coach adds, changes or cancels a team event, when a game time changes, and when a final score is posted. Turn them on under **More**.
+- **"New version" notice** after an update.
+
+Everywhere (app and website): **dark mode** follows the phone or computer setting, and can be set to Light or Dark under **More → Appearance**.
+
+### Turn on notifications (once, on the server)
+
+1. On your laptop, run `python manage.py generate_vapid_keys`.
+2. In Render, open the service's **Environment** tab and add the three values it prints: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`.
+3. Keep `VAPID_PRIVATE_KEY` secret. Changing the keys later turns off everyone's notifications until they switch them back on.
+
+iPhones need iOS 16.4 or newer, and notifications only work in the installed app, not in Safari.
+
+### For developers
+
+The app files are `planner/pwa.py` (manifest, service worker, offline page), `planner/app_views.py`, `planner/push.py`, `planner/static/planner/app-mode.*`, `dark.css` and `icons/`. After changing `planner/templates/planner/sw.js` or the offline page, bump `CACHE_VERSION` in `planner/pwa.py` so phones pick up the new version.
+
+To try it with sample data: `python manage.py load_demo --username demo --password <a password>` fills only that account.

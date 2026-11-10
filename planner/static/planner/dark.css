@@ -1,0 +1,158 @@
+/*
+  Dark mode. Active when <html> has the "dark" class, which the script in _pwa_head.html sets
+  from the phone or computer setting ("Auto"), or from the choice on the More page.
+  Loaded after every other stylesheet, so it only changes colors.
+*/
+html.dark {
+    --d-bg-1: #0b1626;
+    --d-bg-2: #0e1b2e;
+    --d-bg-3: #0b121d;
+    --d-surface: rgba(23, 32, 47, .86);
+    --d-surface-solid: #172030;
+    --d-surface-2: #1e293b;
+    --d-line: #2b374a;
+    --d-text: #e8edf5;
+    --d-muted: #a3afc2;
+    --d-accent: #8bbcff;
+
+    /* shared variables used by the site's stylesheets */
+    --ink: var(--d-text);
+    --ink-2: var(--d-text);
+    --muted: var(--d-muted);
+    --line: var(--d-line);
+    --cream: var(--d-bg-1);
+    --white: var(--d-surface-solid);
+    --glass: var(--d-surface);
+    --glass-strong: rgba(23, 32, 47, .94);
+    --glass-line: rgba(255, 255, 255, .06);
+    --sky-shadow: 0 24px 60px rgba(0, 0, 0, .35);
+    --shadow: 0 16px 38px rgba(0, 0, 0, .3);
+    --nav-ink: var(--d-text);
+    --nav-ink-2: var(--d-text);
+    --nav-muted: var(--d-muted);
+    --app-ink: var(--d-text);
+    --app-ink-2: var(--d-text);
+    --app-muted: var(--d-muted);
+    --app-line: rgba(255, 255, 255, .08);
+    --app-bar: rgba(16, 24, 36, .9);
+    --app-active: #ffffff;
+    --app-accent: var(--d-accent);
+    color-scheme: dark;
+}
+
+/* ---------- Page background ---------- */
+html.dark body { background: linear-gradient(180deg, var(--d-bg-1) 0%, var(--d-bg-2) 45%, var(--d-bg-3) 100%) fixed; color: var(--d-text); }
+html.dark body::before { opacity: .05; }
+
+/* ---------- Top menu ---------- */
+html.dark .nav-word { color: var(--d-text); }
+html.dark .nav-links { background: rgba(23, 32, 47, .7); border-color: rgba(255, 255, 255, .07); box-shadow: 0 10px 30px rgba(0, 0, 0, .3); }
+html.dark .nav-links a { color: var(--d-text); }
+html.dark .nav-links a:hover { background: rgba(255, 255, 255, .07); }
+html.dark .nav-links a.on, html.dark .day-column.today > header { background: linear-gradient(180deg, #f1f4f9, #cfd8e6); color: #0b1626; }
+html.dark .nav-user button { background: var(--d-surface-2); color: var(--d-text); border-color: var(--d-line); }
+html.dark .topbar { background: rgba(14, 22, 34, .6); border-bottom-color: rgba(255, 255, 255, .06); }
+html.dark .topbar-date { color: var(--d-muted); }
+
+/* ---------- Buttons ---------- */
+html.dark .button-primary, html.dark .coach-btn.green {
+    background: linear-gradient(180deg, #f1f4f9, #cfd8e6) !important; color: #0b1626 !important;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, .35) !important;
+}
+html.dark .panel-header > a.button-primary, html.dark .panel-header > .routine-add-button, html.dark .panel-header > .schedule-add-button { color: #0b1626 !important; }
+html.dark .button-ghost, html.dark .button-light, html.dark .coach-btn, html.dark .coach-btn.ghost, html.dark .check-button,
+html.dark .button-delete, html.dark .course-chips a, html.dark .related-cleanup label {
+    background: var(--d-surface-2); color: var(--d-text); border-color: var(--d-line); box-shadow: none;
+}
+html.dark .hero .button-light, html.dark .planner-hero .button-light { background: #fff; color: #0b1626; }
+html.dark .button-delete, html.dark .course-chips a { color: #ff8a80; }
+
+/* ---------- Cards and panels ---------- */
+html.dark .panel, html.dark .stat-card, html.dark .day-column, html.dark .team-card, html.dark .tile, html.dark .sched, html.dark .events,
+html.dark .roster-grid .athlete, html.dark .staff-card, html.dark .commitment-row, html.dark .planner-day, html.dark .athlete,
+html.dark .card, html.dark .facts, html.dark .more-group, html.dark .app-sheet.open, html.dark .app-install {
+    background: var(--d-surface); border-color: var(--glass-line); color: var(--d-text);
+}
+html.dark .day-column > header, html.dark .task-table-head, html.dark .related-cleanup, html.dark .removal-summary,
+html.dark .sched-logo, html.dark .placing, html.dark .status-tag, html.dark .code { background: var(--d-surface-2); color: var(--d-text); }
+html.dark .planner-day.today { background: rgba(32, 120, 92, .16); }
+html.dark .sched-row.is-next, html.dark .staff-card.head { background: rgba(231, 174, 72, .1); }
+html.dark .sched-row, html.dark .event-row { border-top-color: var(--d-line); }
+html.dark .stat-icon.navy { background: rgba(139, 188, 255, .14); color: var(--d-accent); }
+html.dark .stat-icon.gold { background: rgba(231, 174, 72, .16); color: #f2c470; }
+html.dark .stat-icon.green { background: rgba(52, 178, 133, .16); color: #6ed3ac; }
+html.dark h1, html.dark h2, html.dark h3, html.dark strong { color: inherit; }
+
+/* Schedule colors: same hues, dark tints */
+html.dark .schedule-event, html.dark .calendar-plan-item { background: rgba(139, 188, 255, .1); color: var(--d-text); border-color: #7ea6d8; }
+html.dark .schedule-event.type-practice, html.dark .schedule-event.type-game, html.dark .schedule-event.type-workout, html.dark .schedule-event.type-meeting,
+html.dark .calendar-plan-item.kind-athletic { background: rgba(52, 178, 133, .13); border-color: #34b285; }
+html.dark .schedule-event.type-study, html.dark .calendar-plan-item.kind-study { background: rgba(231, 174, 72, .13); border-color: #e7ae48; }
+html.dark .schedule-event.type-routine, html.dark .schedule-event.type-other, html.dark .calendar-plan-item.kind-routine { background: rgba(160, 140, 220, .14); border-color: #a08cdc; }
+html.dark .calendar-plan-item.kind-deadline { background: rgba(255, 110, 100, .12); border-color: #ff7a70; }
+html.dark .calendar-check { background: var(--d-surface-2); border-color: #8a6d2a; color: #f2c470; }
+html.dark .routine-mark { background: rgba(160, 140, 220, .16); color: #c3b5f0; }
+html.dark .tip-card, html.dark .course-cleanup-bar { background: rgba(231, 174, 72, .1); border-color: rgba(231, 174, 72, .35); color: var(--d-text); }
+html.dark .priority-pill { filter: brightness(.85) saturate(1.2); }
+html.dark .tag.home { background: rgba(139, 188, 255, .14); color: var(--d-accent); }
+html.dark .tag.away, html.dark .tag.neutral { background: var(--d-surface-2); color: var(--d-muted); }
+html.dark .next-tag { background: rgba(231, 174, 72, .16); color: #f2c470; }
+html.dark .game-result { background: var(--d-surface-2); color: var(--d-text); }
+html.dark .game-result.loss { background: rgba(255, 110, 100, .14); color: #ff8a80; }
+
+/* ---------- Forms ---------- */
+html.dark .field input:not([type="checkbox"]):not([type="radio"]), html.dark .field select, html.dark .field textarea, html.dark .roster-search {
+    background: var(--d-surface-2); color: var(--d-text); border-color: transparent;
+}
+html.dark .field input:focus, html.dark .field select:focus, html.dark .field textarea:focus, html.dark .roster-search:focus {
+    background: #243046; border-color: #4a6a98; box-shadow: 0 0 0 4px rgba(139, 188, 255, .15);
+}
+html.dark ::placeholder { color: #7f8ba0; }
+
+/* ---------- Messages ---------- */
+html.dark .message { background: rgba(32, 120, 92, .22); color: #bfeedd; border-color: rgba(110, 211, 172, .25); }
+html.dark .message.warning { background: rgba(231, 174, 72, .16); color: #f6dba5; border-color: rgba(231, 174, 72, .3); }
+
+/* ---------- Home ---------- */
+html.dark .word, html.dark .script, html.dark .blurb, html.dark .blurb p { color: var(--d-text); }
+
+/* ---------- App parts ---------- */
+html.dark .app-tab-add span.plus { background: linear-gradient(180deg, #f1f4f9, #cfd8e6); color: #0b1626; }
+html.dark .app-sheet a .ic, html.dark .more-row .ic { background: var(--d-surface-2); }
+html.dark .app-sheet .grab { background: #3a475c; }
+html.dark .app-ptr { background: var(--d-surface-2); color: var(--d-text); }
+html.dark .app-toast { background: #eef2f8; color: #0b1626; }
+html.dark .app-toast button { color: #1f5fbf; }
+html.dark .app-install .go { background: #eef2f8; color: #0b1626; }
+html.dark .toggle-switch input:not(:checked) + span { background: #3a475c; }
+html.dark .theme-choice { background: var(--d-surface-2); }
+html.dark .theme-choice button[aria-pressed="true"] { background: #eef2f8; color: #0b1626; }
+
+/* ---------- Login and sign-up pages (their colors live in auth_base.html) ---------- */
+html.dark body.auth {
+    --navy: var(--d-text); --text: var(--d-text); --muted: var(--d-muted); --soft: #c7d0de;
+    --field: var(--d-surface-2); --field-hover: #243046; --line: var(--d-line); --line-strong: #3a475c;
+    --accent: var(--d-accent);
+    background: linear-gradient(180deg, var(--d-bg-1) 0%, var(--d-bg-2) 45%, var(--d-bg-3) 100%) fixed;
+}
+html.dark body.auth .sky { opacity: .06; }
+html.dark body.auth .frame { background: rgba(23, 32, 47, .78); border-color: rgba(255, 255, 255, .06); box-shadow: 0 40px 90px rgba(0, 0, 0, .45); }
+html.dark body.auth .form-icon { background: var(--d-surface-2); }
+html.dark body.auth .field input:focus, html.dark body.auth .field input[aria-invalid="true"] { background: #243046; border-color: #4a6a98; }
+html.dark body.auth .reveal:hover { background: #2b374a; }
+html.dark body.auth .error-box, html.dark body.auth .notice.error { background: rgba(255, 110, 100, .14); color: #ffaaa3; border-color: rgba(255, 110, 100, .3); }
+html.dark body.auth .notice.success, html.dark body.auth .notice.info { background: rgba(32, 120, 92, .22); color: #bfeedd; border-color: rgba(110, 211, 172, .25); }
+html.dark body.auth button[type=submit] { background: linear-gradient(180deg, #f1f4f9, #cfd8e6); color: #0b1626; }
+html.dark body.auth .secondary { background: var(--d-surface-2); border-color: var(--d-line); }
+html.dark body.auth .secondary:hover { background: #243046; }
+
+/* ---------- Fixes found on screenshots ---------- */
+html.dark .app-top .page-heading h1, html.dark .app-top .coach-page-head h1, html.dark .coach-page-head h1 { color: var(--d-text); }
+html.dark .page-heading p { color: var(--d-muted); }
+html.dark .day-column.today > header span, html.dark .day-column.today > header small { color: #3b4a60; }
+html.dark .app-sheet.open { background: var(--d-surface-solid); }
+html.dark .schedule-event small, html.dark .schedule-event span, html.dark .calendar-plan-item small, html.dark .calendar-plan-item span { color: var(--d-muted); }
+html.dark .eyebrow { color: #4fd1a5; }
+html.dark .hero .eyebrow, html.dark .planner-hero .eyebrow { color: var(--gold); }
+html.dark .schedule-event .tag, html.dark .calendar-plan-item .tag { filter: brightness(1.6); }
+html.dark .schedule-event p, html.dark .calendar-plan-item p { color: var(--d-muted); }

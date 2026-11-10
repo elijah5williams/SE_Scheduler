@@ -15,7 +15,7 @@ THEME_COLOR = "#0a2240"
 BACKGROUND_COLOR = "#f5fafe"
 
 # Bump when the service worker or offline page changes, so phones drop their old copy.
-CACHE_VERSION = "2026-11-10a"
+CACHE_VERSION = "2026-11-10b"
 
 
 @login_not_required
@@ -27,7 +27,7 @@ def manifest(request):
             "short_name": "Athlete Planner",
             "description": "Classes, practices, games and study time in one schedule.",
             "id": "/",
-            "start_url": "/?source=app",
+            "start_url": "/dashboard/?source=app",
             "scope": "/",
             "display": "standalone",
             "orientation": "portrait",
@@ -61,10 +61,13 @@ def service_worker(request):
         "planner/sw.js",
         {
             "version": CACHE_VERSION,
+            "icon": static("planner/icons/icon-192.png"),
+            "badge": static("planner/icons/badge-96.png"),
             "precache": [
                 "/offline/",
                 static("planner/icons/icon-192.png"),
                 static("planner/icons/favicon-48.png"),
+                static("planner/app-mode.css"),
             ],
         },
         content_type="application/javascript",

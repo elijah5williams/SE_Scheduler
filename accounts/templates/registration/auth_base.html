@@ -6,9 +6,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}Athlete Academic Assistant{% endblock %}</title>
-  {% include "planner/_pwa_head.html" %}
   <style>
     :root {
       --navy: #0a2240;
@@ -192,8 +191,9 @@
       h1 { font-size: 26px; }
     }
   </style>
+  {% include "planner/_pwa_head.html" %}
 </head>
-<body>
+<body class="auth">
   <div class="sky" aria-hidden="true">
     <div class="ring"></div>
     <div class="cloud" style="width:760px;height:320px;left:-200px;bottom:-110px"></div>
@@ -306,5 +306,6 @@
       start();
     })();
   </script>
+{% include "planner/_app_shell.html" %}
 </body>
 </html>

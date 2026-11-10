@@ -533,3 +533,20 @@ class AthleteBio(models.Model):
 
     def __str__(self):
         return f"{self.user.get_full_name()} ({self.team.name})"
+
+
+class PushSubscription(models.Model):
+    """One phone or browser that agreed to get notifications for this user."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="push_subscriptions")
+    endpoint = models.URLField(max_length=1000, unique=True)
+    p256dh = models.CharField(max_length=200)
+    auth = models.CharField(max_length=100)
+    user_agent = models.CharField(max_length=300, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Notifications for {self.user} ({self.created_at:%Y-%m-%d})"
+
+    def as_subscription_info(self):
+        return {"endpoint": self.endpoint, "keys": {"p256dh": self.p256dh, "auth": self.auth}}

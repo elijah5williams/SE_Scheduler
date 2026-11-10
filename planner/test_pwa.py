@@ -13,7 +13,7 @@ class InstallableAppTests(TestCase):
         self.assertEqual(response["Content-Type"], "application/manifest+json")
         data = json.loads(response.content)
         self.assertEqual(data["display"], "standalone")
-        self.assertEqual(data["start_url"], "/?source=app")
+        self.assertEqual(data["start_url"], "/dashboard/?source=app")
         sizes = {icon["sizes"] for icon in data["icons"]}
         self.assertTrue({"192x192", "512x512"} <= sizes)
         self.assertTrue(any(icon.get("purpose") == "maskable" for icon in data["icons"]))

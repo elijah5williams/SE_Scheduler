@@ -29,6 +29,7 @@ from .models import (
 )
 from accounts import throttle
 
+from . import push
 from .schedule_sync import ScheduleError, game_hub, sync_if_stale, sync_team
 from .services import events_on, generate_study_plan, planner_insights
 
@@ -645,6 +646,7 @@ def assignment_create(request, team_pk):
         assignment.team = team
         assignment.save()
         assignment.push_to_team()
+        push.coach_event_changed(assignment, "added", request.user)
         messages.success(request, f"{assignment.title} was sent to {team.athletes.count()} athlete(s).")
         return redirect("planner:coach_schedule")
     return render(
@@ -661,6 +663,7 @@ def assignment_update(request, pk):
     if request.method == "POST" and form.is_valid():
         form.save()
         assignment.sync_events()
+        push.coach_event_changed(assignment, "updated", request.user)
         messages.success(request, "Updated for all athletes on the team.")
         return redirect("planner:coach_schedule")
     return render(
@@ -675,6 +678,8 @@ def assignment_delete(request, pk):
     assignment = get_object_or_404(Assignment, pk=pk, team__in=Team.coached_by(request.user))
     if request.method == "POST":
         title = assignment.title
+        if assignment.date >= timezone.localdate() or assignment.repeat_weekly:
+            push.coach_event_changed(assignment, "removed", request.user)
         assignment.delete()  # removes the copies from athletes' schedules too
         messages.success(request, f"{title} was removed from every athlete's schedule.")
         return redirect("planner:coach_schedule")
