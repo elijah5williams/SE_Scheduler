@@ -102,3 +102,44 @@ class LoginFlowTests(TestCase):
         self.assertEqual(self.client.get("/admin/login/").status_code, 200)
         self.client.login(username="boss", password=PASSWORD)
         self.assertEqual(self.client.get("/admin/").status_code, 200)
+
+
+class SecurityTests(TestCase):
+    def setUp(self):
+        from django.core.cache import cache
+
+        cache.clear()
+        User.objects.create_user("alex", password=PASSWORD)
+
+    def test_login_locks_after_repeated_wrong_passwords(self):
+        for _ in range(5):
+            self.client.post(reverse("login"), {"username": "alex", "password": "wrong"})
+        # Even the right password is refused while the account is locked.
+        response = self.client.post(reverse("login"), {"username": "alex", "password": PASSWORD})
+        self.assertEqual(response.status_code, 429)
+        self.assertContains(response, "Too many failed sign-in attempts", status_code=429)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_successful_login_clears_failure_count(self):
+        for _ in range(4):
+            self.client.post(reverse("login"), {"username": "alex", "password": "wrong"})
+        self.client.post(reverse("login"), {"username": "alex", "password": PASSWORD})
+        self.client.logout()
+        for _ in range(4):
+            self.client.post(reverse("login"), {"username": "alex", "password": "wrong"})
+        response = self.client.post(reverse("login"), {"username": "alex", "password": PASSWORD})
+        self.assertEqual(response.status_code, 302)
+
+    def test_login_locks_an_address_guessing_many_accounts(self):
+        for n in range(20):
+            self.client.post(reverse("login"), {"username": f"guess{n}", "password": "wrong"})
+        response = self.client.post(reverse("login"), {"username": "alex", "password": PASSWORD})
+        self.assertEqual(response.status_code, 429)
+
+    def test_signup_rejects_other_edu_domains(self):
+        response = self.client.post(reverse("signup"), {
+            "username": "outsider", "school_email": "someone@harvard.edu", "role": "student",
+            "password1": "Tr1cky-horse-9", "password2": "Tr1cky-horse-9",
+        })
+        self.assertContains(response, "Please use your school email address.")
+        self.assertFalse(User.objects.filter(username="outsider").exists())

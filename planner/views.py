@@ -4,7 +4,7 @@ from functools import wraps
 from django.contrib import messages
 from django.contrib.auth.decorators import login_not_required, login_required
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils import timezone
 
@@ -27,8 +27,26 @@ from .models import (
     StudySession,
     Team,
 )
+from accounts import throttle
+
 from .schedule_sync import ScheduleError, game_hub, sync_if_stale, sync_team
 from .services import events_on, generate_study_plan, planner_insights
+
+
+def _redirect_next(request, default):
+    """Go back to the page named in the form's "next" field, but never to another website.
+
+    "next" may be a URL name ("planner:tasks") or a path on this site ("/schedule/").
+    """
+    target = request.POST.get("next", "")
+    if target:
+        try:
+            return redirect(reverse(target))
+        except NoReverseMatch:
+            pass
+        if url_has_allowed_host_and_scheme(target, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+            return redirect(target)
+    return redirect(default)
 
 
 @login_not_required  # calendar apps can't log in; the private token in the URL is the key
@@ -51,7 +69,7 @@ def calendar_reset(request):
     if request.method == "POST":
         request.user.profile.get_calendar_token(reset=True)
         messages.success(request, "Your calendar link was changed. Add the new link to your calendar app; the old one no longer works.")
-    return redirect(request.POST.get("next") or "planner:schedule")
+    return _redirect_next(request, "planner:schedule")
 
 
 def calendar_links(request):
@@ -310,7 +328,7 @@ def task_toggle(request, pk):
         task.save(update_fields=["completed"])
         status = "completed" if task.completed else "active"
         messages.success(request, f"{task.title} marked {status}.")
-    return redirect(request.POST.get("next", "planner:tasks"))
+    return _redirect_next(request, "planner:tasks")
 
 
 @login_required
@@ -492,7 +510,7 @@ def session_toggle(request, pk):
         session.completed = not session.completed
         session.save(update_fields=["completed"])
         messages.success(request, "Study session updated.")
-    return redirect(request.POST.get("next", "planner:study_planner"))
+    return _redirect_next(request, "planner:study_planner")
 
 
 @login_required
@@ -502,7 +520,7 @@ def routine_session_toggle(request, pk):
         session.completed = not session.completed
         session.save(update_fields=["completed"])
         messages.success(request, "Routine session updated.")
-    return redirect(request.POST.get("next", "planner:study_planner"))
+    return _redirect_next(request, "planner:study_planner")
 
 
 # ---------------------------------------------------------------------------
@@ -602,10 +620,7 @@ def team_sync(request, team_pk):
                 request,
                 f"Schedule updated: {counts['added']} new, {counts['updated']} changed, {counts['removed']} removed.",
             )
-    next_url = request.POST.get("next", "")
-    if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-        return redirect(next_url)
-    return redirect("planner:coach_schedule")
+    return _redirect_next(request, "planner:coach_schedule")
 
 
 @coach_required
@@ -675,6 +690,11 @@ def team_join(request):
     if request.user.profile.role == Profile.COACH:
         return redirect("planner:coach_dashboard")
     form = JoinTeamForm(request.POST or None)
+    if request.method == "POST" and throttle.team_code_by_user.blocked(request.user.pk):
+        messages.error(request, "Too many wrong team codes. Please wait an hour and try again, or ask your coach for the code.")
+        return redirect("planner:schedule")
+    if request.method == "POST" and not form.is_valid():
+        throttle.team_code_by_user.fail(request.user.pk)
     if request.method == "POST" and form.is_valid():
         team = form.team
         team.athletes.add(request.user)

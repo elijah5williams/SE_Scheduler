@@ -354,7 +354,7 @@ class Profile(models.Model):
         return team.name if team else ""
 
 def make_join_code():
-    return secrets.token_hex(3).upper()
+    return secrets.token_hex(4).upper()  # 8 characters: about 4 billion possible codes
 
 
 class Team(models.Model):

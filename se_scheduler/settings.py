@@ -2,13 +2,22 @@ import os
 from pathlib import Path
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # On your laptop these defaults just work. On Render, the values come from the
 # service's environment variables (see render.yaml), so secrets stay out of git.
-SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-local-student-project-change-before-production")
-DEBUG = os.environ.get("DEBUG", "True").lower() in {"1", "true", "yes"}
+# DEBUG is on by default only on your laptop. On Render (which sets RENDER=true) it is off
+# unless DEBUG is set explicitly, so a missing variable can never turn on debug pages in production.
+_debug_default = "False" if os.environ.get("RENDER") else "True"
+DEBUG = os.environ.get("DEBUG", _debug_default).lower() in {"1", "true", "yes"}
+
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured("Set the SECRET_KEY environment variable before running with DEBUG off.")
+    SECRET_KEY = "django-insecure-local-development-only"
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "172.25.11.122"]
 ALLOWED_HOSTS += [h.strip() for h in os.environ.get("ALLOWED_HOSTS", "").split(",") if h.strip()]

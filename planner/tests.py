@@ -432,3 +432,39 @@ class PageTests(StudentTestCase):
         self.assertRedirects(response, reverse("planner:schedule"))
         self.assertFalse(AcademicTask.objects.filter(course="MGT 100").exists())
         self.assertFalse(StudySession.objects.exists())
+
+
+class SecurityTests(StudentTestCase):
+    def setUp(self):
+        from django.core.cache import cache
+
+        cache.clear()
+        super().setUp()
+        self.task = AcademicTask.objects.create(
+            user=self.user, title="Essay", course="ENG 101",
+            due_date=timezone.now() + timedelta(days=3), estimated_minutes=60,
+        )
+
+    def test_next_cannot_redirect_to_another_site(self):
+        url = reverse("planner:task_toggle", args=[self.task.pk])
+        response = self.client.post(url, {"next": "https://evil.example.com/"})
+        self.assertRedirects(response, reverse("planner:tasks"), fetch_redirect_response=False)
+        response = self.client.post(reverse("planner:calendar_reset"), {"next": "//evil.example.com"})
+        self.assertRedirects(response, reverse("planner:schedule"), fetch_redirect_response=False)
+
+    def test_next_still_accepts_url_names_and_local_paths(self):
+        url = reverse("planner:task_toggle", args=[self.task.pk])
+        response = self.client.post(url, {"next": "planner:dashboard"})
+        self.assertRedirects(response, reverse("planner:dashboard"), fetch_redirect_response=False)
+        response = self.client.post(url, {"next": "/schedule/"})
+        self.assertRedirects(response, "/schedule/", fetch_redirect_response=False)
+
+    def test_team_code_guessing_is_limited(self):
+        from .models import Team
+
+        team = Team.objects.create(name="Football")
+        self.assertEqual(len(team.join_code), 8)
+        for _ in range(10):
+            self.client.post(reverse("planner:team_join"), {"code": "WRONG1"})
+        self.client.post(reverse("planner:team_join"), {"code": team.join_code})
+        self.assertFalse(team.athletes.filter(pk=self.user.pk).exists())

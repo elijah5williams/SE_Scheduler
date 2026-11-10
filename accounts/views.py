@@ -2,10 +2,12 @@ import logging
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.forms.utils import ErrorDict
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.encoding import force_bytes, force_str
@@ -13,7 +15,42 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 from planner.forms import SignupForm
 
+from . import throttle
+
 logger = logging.getLogger(__name__)
+
+TOO_MANY_LOGINS = "Too many failed sign-in attempts. Please wait 15 minutes and try again, or reset your password."
+
+
+class ThrottledLoginView(auth_views.LoginView):
+    """The normal login page, but it stops accepting guesses after repeated wrong passwords."""
+
+    redirect_authenticated_user = True
+
+    def post(self, request, *args, **kwargs):
+        username = request.POST.get("username", "").strip()
+        ip = throttle.client_ip(request)
+        if throttle.login_by_ip.blocked(ip) or (username and throttle.login_by_username.blocked(username)):
+            form = self.get_form()
+            # Show the message without validating the form, so no password is checked while locked.
+            form._errors = ErrorDict()
+            form.cleaned_data = {}
+            form.add_error(None, TOO_MANY_LOGINS)
+            response = self.render_to_response(self.get_context_data(form=form))
+            response.status_code = 429
+            return response
+        return super().post(request, *args, **kwargs)
+
+    def form_invalid(self, form):
+        username = self.request.POST.get("username", "").strip()
+        throttle.login_by_ip.fail(throttle.client_ip(self.request))
+        if username:
+            throttle.login_by_username.fail(username)
+        return super().form_invalid(form)
+
+    def form_valid(self, form):
+        throttle.login_by_username.reset(form.get_user().get_username())
+        return super().form_valid(form)
 
 
 @login_not_required  # visitors must be able to reach this page while logged out

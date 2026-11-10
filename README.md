@@ -205,3 +205,13 @@ The planner uses built-in scheduling intelligence, so it works without a paid AP
 - `planner/forms.py` — event and assignment forms
 - `planner/templates/` — page layouts
 - `planner/static/` — design and browser behavior
+
+## Install it as a phone app
+
+The site is an installable web app, so athletes can put it on their home screen like any other app. It opens full screen with its own icon, and shows a friendly page when there's no connection.
+
+- **iPhone (Safari):** open the site, tap **Share**, then **Add to Home Screen**.
+- **Android (Chrome):** open the site, tap **⋮**, then **Install app** (or accept the install banner).
+- **Laptop (Chrome/Edge):** click the install icon in the address bar.
+
+Installing needs HTTPS, which Render provides. The app files are in `planner/pwa.py` (manifest, service worker, offline page) and `planner/static/planner/icons/`. Schedule pages are never saved on the phone, because they hold private data. After you change `planner/templates/planner/sw.js` or the offline page, bump `CACHE_VERSION` in `planner/pwa.py` so phones pick up the new version.
