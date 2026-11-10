@@ -26,13 +26,6 @@ services:
         sync: false
       - key: DJANGO_SUPERUSER_PASSWORD
         sync: false
-      # Phone notifications: run `python manage.py generate_vapid_keys` and paste the values
-      - key: VAPID_PUBLIC_KEY
-        sync: false
-      - key: VAPID_PRIVATE_KEY
-        sync: false
-      - key: VAPID_SUBJECT
-        sync: false
       # Email for sign-up verification and password resets (e.g. a free Brevo SMTP account)
       - key: EMAIL_HOST
         sync: false
