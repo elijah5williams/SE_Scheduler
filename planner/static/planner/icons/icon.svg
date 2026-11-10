@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#f4b63a"/>
+  <g fill="#0a2240" stroke="#0a2240" stroke-linecap="round" stroke-linejoin="round">
+    <!-- tail -->
+    <path d="M166 226 C140 236 118 258 106 288 C102 296 96 300 90 298" fill="none" stroke-width="8"/>
+    <!-- far legs (slightly lighter) -->
+    <g opacity=".7" fill="none" stroke-width="14">
+      <path d="M322 282 C350 302 380 314 414 314 L436 320"/>
+      <path d="M200 258 C186 286 164 300 132 306 L108 316"/>
+    </g>
+    <!-- torso: deep chest, arched back, tucked waist -->
+    <path stroke-width="2" d="M372 206 C334 186 262 178 228 194 C200 204 178 208 160 222 C148 238 154 262 178 272 C200 264 220 254 240 250 C268 262 300 292 334 292 C362 290 380 262 378 236 Z"/>
+    <!-- thigh muscle -->
+    <ellipse cx="192" cy="244" rx="36" ry="30" stroke-width="0"/>
+    <!-- shoulder -->
+    <ellipse cx="346" cy="250" rx="30" ry="36" stroke-width="0"/>
+    <!-- neck -->
+    <path stroke-width="2" d="M352 220 C366 192 382 170 398 154 L422 166 C406 186 394 210 378 240 Z"/>
+    <!-- head: long narrow wedge -->
+    <path stroke-width="2" d="M396 150 C410 138 432 140 446 148 L484 166 C489 169 487 176 481 176 L438 177 C422 179 408 176 398 168 Z"/>
+    <!-- folded ear -->
+    <path stroke-width="2" d="M410 150 C404 138 394 131 384 134 C393 140 399 149 402 158 Z"/>
+    <!-- near legs -->
+    <g fill="none" stroke-width="16">
+      <path d="M344 278 C374 290 404 298 442 294 L466 298"/>
+      <path d="M182 264 C160 282 130 290 98 292 L68 302"/>
+    </g>
+  </g>
+  <circle cx="436" cy="156" r="5" fill="#f4b63a"/>
+  <!-- planner line with check marks -->
+  <path d="M60 372 H452" stroke="#0a2240" stroke-width="14" stroke-linecap="round"/>
+  <g fill="none" stroke="#0a2240" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M92 410 l14 14 l26 -30"/><path d="M232 410 l14 14 l26 -30"/><path d="M372 410 l14 14 l26 -30" opacity=".35"/>
+  </g>
+</svg>

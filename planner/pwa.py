@@ -15,7 +15,7 @@ THEME_COLOR = "#0a2240"
 BACKGROUND_COLOR = "#f5fafe"
 
 # Bump when the service worker or offline page changes, so phones drop their old copy.
-CACHE_VERSION = "2026-11-10b"
+CACHE_VERSION = "2026-11-10c"
 
 
 @login_not_required
