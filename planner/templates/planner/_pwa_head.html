@@ -1,0 +1,17 @@
+{% load static %}
+  {# Installable app: manifest, icons and the service worker (see planner/pwa.py). #}
+  <link rel="manifest" href="{% url 'pwa_manifest' %}">
+  <meta name="theme-color" content="#0a2240">
+  <link rel="icon" type="image/png" sizes="48x48" href="{% static 'planner/icons/favicon-48.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'planner/icons/apple-touch-icon.png' %}">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Athlete Planner">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("{% url 'pwa_service_worker' %}", { scope: "/" }).catch(function () {});
+      });
+    }
+  </script>

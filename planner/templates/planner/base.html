@@ -7,7 +7,7 @@
     <meta name="description" content="A smart academic planner for college student-athletes.">
     <title>{% block title %}Athlete Academic Assistant{% endblock %}</title>
     {% block extra_head %}{% endblock %}
-    <link rel="icon" href="https://assumptiongreyhounds.com/images/logos/site/site.png">
+    {% include "planner/_pwa_head.html" %}
     <link rel="stylesheet" href="{% static 'planner/styles.css' %}?v=2026-11-06d">
     <link rel="stylesheet" href="{% static 'planner/coach.css' %}?v=2026-11-07b">
     <link rel="preconnect" href="https://fonts.googleapis.com">
