@@ -550,3 +550,21 @@ class PushSubscription(models.Model):
 
     def as_subscription_info(self):
         return {"endpoint": self.endpoint, "keys": {"p256dh": self.p256dh, "auth": self.auth}}
+
+
+class PushKeys(models.Model):
+    """The server's own notification keys, created automatically the first time they're needed.
+
+    Setting VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY on the server overrides these.
+    Changing the keys turns off everyone's notifications until they switch them back on.
+    """
+
+    public_key = models.CharField(max_length=120)
+    private_key = models.CharField(max_length=120)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = "push keys"
+
+    def __str__(self):
+        return f"Notification keys ({self.created_at:%Y-%m-%d})"

@@ -123,8 +123,8 @@ if not DEBUG:
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Phone notifications for the installed app. Create keys with `python manage.py generate_vapid_keys`.
-# Leave unset to turn notifications off.
+# Phone notifications for the installed app. Optional: if these aren't set, the server creates
+# its own keys automatically and keeps them in the database.
 VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
 VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
 VAPID_SUBJECT = os.environ.get("VAPID_SUBJECT", "mailto:noreply@assumption.edu")

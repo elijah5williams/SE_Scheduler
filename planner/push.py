@@ -1,9 +1,10 @@
 """Phone notifications (Web Push) for people who installed the app and turned them on.
 
-Setup on the server: run `python manage.py generate_vapid_keys` once and set the three
-VAPID_* environment variables it prints. Without them, notifications are simply turned off.
+No setup needed: the server creates its own keys the first time they're needed and keeps
+them in the database. To use your own instead, set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY.
 """
 
+import base64
 import json
 import logging
 import threading
@@ -12,7 +13,7 @@ from urllib.parse import urlsplit
 from django.conf import settings
 from django.db import close_old_connections, transaction
 
-from .models import PushSubscription
+from .models import PushKeys, PushSubscription
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +29,43 @@ PUSH_SERVICE_HOSTS = (
 )
 
 
+def _b64url(data):
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
+
+
+def generate_keys():
+    """A new (public, private) key pair, both base64url, in the format browsers and pywebpush use."""
+    from cryptography.hazmat.primitives import serialization
+    from py_vapid import Vapid
+
+    vapid = Vapid()
+    vapid.generate_keys()
+    private = vapid.private_key.private_numbers().private_value.to_bytes(32, "big")
+    public = vapid.public_key.public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint)
+    return _b64url(public), _b64url(private)
+
+
+def keys():
+    """(public, private) keys: from the server settings if set, otherwise created once and saved."""
+    if settings.VAPID_PUBLIC_KEY and settings.VAPID_PRIVATE_KEY:
+        return settings.VAPID_PUBLIC_KEY, settings.VAPID_PRIVATE_KEY
+    saved = PushKeys.objects.filter(pk=1).first()
+    if saved is None:
+        public, private = generate_keys()
+        saved, _ = PushKeys.objects.get_or_create(pk=1, defaults={"public_key": public, "private_key": private})
+    return saved.public_key, saved.private_key
+
+
+def public_key():
+    return keys()[0]
+
+
 def enabled():
-    return bool(settings.VAPID_PUBLIC_KEY and settings.VAPID_PRIVATE_KEY)
+    try:
+        import pywebpush  # noqa: F401
+    except ImportError:
+        return False
+    return True
 
 
 def is_allowed_endpoint(endpoint):
@@ -47,7 +83,7 @@ def _send_one(subscription, payload):
         webpush(
             subscription_info=subscription.as_subscription_info(),
             data=payload,
-            vapid_private_key=settings.VAPID_PRIVATE_KEY,
+            vapid_private_key=keys()[1],
             vapid_claims={"sub": settings.VAPID_SUBJECT},
             ttl=12 * 60 * 60,
             timeout=10,

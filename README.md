@@ -228,11 +228,9 @@ These only appear when it's opened from the home screen; the website stays the s
 
 Everywhere (app and website): **dark mode** follows the phone or computer setting, and can be set to Light or Dark under **More → Appearance**.
 
-### Turn on notifications (once, on the server)
+### Notifications
 
-1. On your laptop, run `python manage.py generate_vapid_keys`.
-2. In Render, open the service's **Environment** tab and add the three values it prints: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`.
-3. Keep `VAPID_PRIVATE_KEY` secret. Changing the keys later turns off everyone's notifications until they switch them back on.
+Nothing to set up: the server creates its own notification keys the first time someone turns notifications on, and keeps them in the database. (To use your own keys instead, run `python manage.py generate_vapid_keys` and set the `VAPID_*` values it prints on the server.)
 
 iPhones need iOS 16.4 or newer, and notifications only work in the installed app, not in Safari.
 

@@ -40,7 +40,7 @@ class AppPageTests(TestCase):
         response = self.client.get(reverse("planner:app_more"))
         self.assertContains(response, "Academic work")
         self.assertContains(response, 'data-theme-value="dark"')
-        self.assertContains(response, 'data-key=""')  # notifications not set up in tests
+        self.assertNotContains(response, 'data-key=""')  # keys are created automatically
 
     @override_settings(**PUSH_KEYS)
     def test_more_page_offers_notifications_when_configured(self):
@@ -90,9 +90,22 @@ class PushSubscriptionTests(TestCase):
     def post(self, url, body):
         return self.client.post(url, json.dumps(body), content_type="application/json")
 
-    def test_refused_when_not_configured(self):
+    def test_keys_are_created_once_and_reused(self):
+        from py_vapid import Vapid
+
+        from . import push
+        from .models import PushKeys
+
+        public, private = push.keys()
+        self.assertEqual(push.keys(), (public, private))
+        self.assertEqual(PushKeys.objects.count(), 1)
+        self.assertEqual(len(public), 87)  # uncompressed P-256 point, base64url
+        self.assertIn("Authorization", Vapid.from_string(private).sign({"aud": "https://fcm.googleapis.com", "sub": "mailto:a@b.c"}))
+        self.assertContains(self.client.get(reverse("planner:app_more")), f'data-key="{public}"')
+
+    def test_subscribe_works_without_any_setup(self):
         response = self.post(self.url, {"endpoint": FCM, "keys": {"p256dh": "k", "auth": "a"}})
-        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.status_code, 200)
 
     @override_settings(**PUSH_KEYS)
     def test_subscribe_and_unsubscribe(self):

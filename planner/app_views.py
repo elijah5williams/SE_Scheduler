@@ -10,7 +10,6 @@
 import json
 from datetime import timedelta
 
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -85,7 +84,7 @@ def more(request):
         "is_coach": is_coach,
         "coach_teams": list(Team.coached_by(request.user)) if is_coach and profile.is_verified_coach else [],
         "push_enabled": push.enabled(),
-        "vapid_public_key": settings.VAPID_PUBLIC_KEY,
+        "vapid_public_key": push.public_key() if push.enabled() else "",
         **calendar_links(request),
     })
 
