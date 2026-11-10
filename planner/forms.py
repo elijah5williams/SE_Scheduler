@@ -4,8 +4,7 @@ from django.contrib.auth.models import User
 
 from .models import AcademicTask, Assignment, Event, FlexibleRoutine, Profile, Team
 
-# Replace with your school's email domain(s). Any address ending in .edu is
-# also accepted while testing (see clean_school_email below).
+# Only these school email domains can sign up.
 ALLOWED_DOMAINS = {"assumption.edu"}
 
 
@@ -39,7 +38,7 @@ class SignupForm(UserCreationForm):
     def clean_school_email(self):
         email = self.cleaned_data["school_email"].lower()
         domain = email.rsplit("@", 1)[1]
-        if domain not in ALLOWED_DOMAINS and not domain.endswith(".edu"):
+        if domain not in ALLOWED_DOMAINS:
             raise forms.ValidationError("Please use your school email address.")
         if Profile.objects.filter(school_email=email).exists():
             raise forms.ValidationError("That email is already registered.")
@@ -235,7 +234,7 @@ class AssignmentForm(forms.ModelForm):
 
 
 class JoinTeamForm(forms.Form):
-    code = forms.CharField(max_length=8, label="Team code")
+    code = forms.CharField(max_length=12, label="Team code")
 
     def clean_code(self):
         code = self.cleaned_data["code"].strip().upper()
