@@ -20,6 +20,7 @@ from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
 
+from . import push
 from .models import Assignment, Event, Team
 
 logger = logging.getLogger(__name__)
@@ -194,6 +195,15 @@ def parse_record(page):
     return record
 
 
+def _notify_game_change(assignment, changed, had_result):
+    """Tell the team when an upcoming game moves, or when a final score is posted."""
+    if assignment.result and not had_result:
+        if assignment.date >= timezone.localdate() - timedelta(days=2):  # not old games on first sync
+            push.game_final(assignment)
+    elif changed.keys() & {"date", "start_time", "time_tba"} and assignment.date >= timezone.localdate():
+        push.game_time_changed(assignment)
+
+
 @transaction.atomic
 def sync_team(team, page=None):
     """Bring the team's synced games in line with its schedule page. Returns counts of what changed."""
@@ -213,12 +223,16 @@ def sync_team(team, page=None):
             continue
         changed = {k: v for k, v in game.fields().items() if getattr(assignment, k) != v}
         if changed:
+            had_result = bool(assignment.result)
             for key, value in changed.items():
                 setattr(assignment, key, value)
             assignment.save()
             assignment.sync_events()
             counts["updated"] += 1
+            _notify_game_change(assignment, changed, had_result)
     for gone in existing.values():  # dropped from the website, e.g. cancelled
+        if gone.date >= timezone.localdate() and not gone.result:
+            push.game_removed(gone)
         gone.delete()
         counts["removed"] += 1
 

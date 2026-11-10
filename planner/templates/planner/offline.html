@@ -1,38 +1,137 @@
-<!DOCTYPE html>
+{% load static %}<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="{{ theme_color }}">
   <title>Offline · Athlete Academic Assistant</title>
+  <script>
+    (function () {
+      try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}
+    })();
+  </script>
   <style>
-    :root { --navy: #0a2240; --text: #121a2b; --muted: #4f5b72; --accent: #1f5fbf; }
+    :root {
+      --navy: #0a2240; --text: #121a2b; --muted: #4f5b72; --accent: #1f5fbf; --card: rgba(255, 255, 255, .9);
+      --line: #e3e8ee; --bg: linear-gradient(180deg, #8cc4ee 0%, #b7dcf6 30%, #e3f1fb 62%, #f5fafe 100%);
+      --chip: #eef3f9; --button: #0a2240; --button-text: #fff;
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --text: #e8edf5; --muted: #a3afc2; --accent: #7fb2ff; --card: rgba(22, 30, 44, .92); --line: #2a3547;
+        --bg: linear-gradient(180deg, #0b1626 0%, #0e1b2e 45%, #0b121d 100%); --chip: #1f2a3c; --button: #e8edf5; --button-text: #0b1626;
+        color-scheme: dark;
+      }
+    }
+    :root[data-theme="dark"] {
+      --text: #e8edf5; --muted: #a3afc2; --accent: #7fb2ff; --card: rgba(22, 30, 44, .92); --line: #2a3547;
+      --bg: linear-gradient(180deg, #0b1626 0%, #0e1b2e 45%, #0b121d 100%); --chip: #1f2a3c; --button: #e8edf5; --button-text: #0b1626;
+      color-scheme: dark;
+    }
     * { box-sizing: border-box; }
     body {
-      margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px 16px;
+      margin: 0; min-height: 100vh; padding: calc(env(safe-area-inset-top, 0px) + 20px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--text);
-      background: linear-gradient(180deg, #8cc4ee 0%, #b7dcf6 30%, #e3f1fb 62%, #f5fafe 100%) fixed;
+      background: var(--bg) fixed; background-color: #0b1626;
     }
-    .card {
-      width: 100%; max-width: 420px; padding: 32px 28px; border-radius: 22px; text-align: center;
-      background: rgba(255, 255, 255, .86); box-shadow: 0 24px 60px rgba(31, 79, 128, .14);
-    }
-    img { width: 64px; height: 64px; border-radius: 16px; }
-    h1 { margin: 18px 0 8px; font-size: 1.4rem; }
-    p { margin: 0 0 22px; color: var(--muted); line-height: 1.5; }
+    main { max-width: 560px; margin: 0 auto; }
+    .card { padding: 26px 22px; border-radius: 22px; text-align: center; background: var(--card); box-shadow: 0 24px 60px rgba(31, 79, 128, .14); }
+    img { width: 56px; height: 56px; border-radius: 14px; }
+    h1 { margin: 14px 0 6px; font-size: 1.35rem; }
+    p { margin: 0 0 18px; color: var(--muted); line-height: 1.5; }
     button {
-      font: inherit; font-weight: 600; color: #fff; background: var(--navy); border: 0;
+      font: inherit; font-weight: 600; color: var(--button-text); background: var(--button); border: 0;
       border-radius: 12px; padding: 12px 22px; min-height: 44px; cursor: pointer;
     }
     button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    .saved { margin-top: 18px; }
+    .saved-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 0 4px 10px; }
+    .saved-head h2 { margin: 0; font-size: 1.05rem; }
+    .saved-head small { color: var(--muted); font-size: .8rem; text-align: right; }
+    .day { background: var(--card); border-radius: 18px; padding: 14px 16px; margin-bottom: 12px; }
+    .day h3 { margin: 0 0 8px; font-size: .95rem; }
+    .day h3 .today { color: var(--accent); }
+    .item { display: grid; grid-template-columns: 74px 1fr; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+    .item:first-of-type { border-top: 0; }
+    .time { font-variant-numeric: tabular-nums; color: var(--muted); font-size: .85rem; padding-top: 2px; }
+    .what strong { display: block; font-size: .95rem; }
+    .what span { color: var(--muted); font-size: .82rem; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; background: var(--chip); font-size: .72rem; font-weight: 700; margin-bottom: 3px; }
+    .tag.athletic { color: #1a7f4b; } .tag.class { color: #2d5fb8; } .tag.study { color: #8a5a00; } .tag.deadline { color: #c2413a; } .tag.routine { color: #6b4fbf; }
+    :root[data-theme="dark"] .tag.athletic, :root[data-theme="dark"] .tag.class, :root[data-theme="dark"] .tag.study, :root[data-theme="dark"] .tag.deadline, :root[data-theme="dark"] .tag.routine { filter: brightness(1.7); }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tag { filter: brightness(1.7); } }
+    .done strong { text-decoration: line-through; opacity: .6; }
+    .empty { color: var(--muted); font-size: .9rem; margin: 0; }
   </style>
 </head>
 <body>
-  <main class="card">
-    {% load static %}<img src="{% static 'planner/icons/icon-192.png' %}" alt="">
-    <h1>You're offline</h1>
-    <p>Your schedule needs an internet connection. Check your Wi-Fi or data and try again.</p>
-    <button type="button" onclick="location.reload()">Try again</button>
+  <main>
+    <section class="card">
+      <img src="{% static 'planner/icons/icon-192.png' %}" alt="">
+      <h1>You're offline</h1>
+      <p data-offline-msg>Your schedule needs an internet connection. Check your Wi-Fi or data and try again.</p>
+      <button type="button" onclick="location.reload()">Try again</button>
+    </section>
+    <section class="saved" data-saved hidden aria-labelledby="savedTitle">
+      <div class="saved-head"><h2 id="savedTitle">Your saved schedule</h2><small data-saved-at></small></div>
+      <div data-days></div>
+    </section>
   </main>
+  <script>
+    (function () {
+      if (!window.caches) return;
+      caches.open("athlete-planner-private")
+        .then(function (cache) { return cache.match("/app/offline-data.json"); })
+        .then(function (response) { return response ? response.json() : null; })
+        .then(function (data) { if (data && data.days) render(data); })
+        .catch(function () {});
+
+      function el(tag, cls, text) {
+        var node = document.createElement(tag);
+        if (cls) node.className = cls;
+        if (text) node.textContent = text;
+        return node;
+      }
+      function clock(hhmm) {
+        if (!hhmm) return "";
+        var p = hhmm.split(":"), h = +p[0], m = p[1];
+        return (h % 12 || 12) + ":" + m + (h < 12 ? " AM" : " PM");
+      }
+      function render(data) {
+        var todayIso = new Date().toLocaleDateString("en-CA");
+        var days = data.days.filter(function (d) { return d.date >= todayIso; });
+        if (!days.length) return;
+        document.querySelector("[data-offline-msg]").textContent =
+          "You can still see your schedule below. It was saved the last time you opened the app online.";
+        var saved = new Date(data.saved_at);
+        document.querySelector("[data-saved-at]").textContent =
+          "Saved " + saved.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + ", " +
+          saved.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+        var box = document.querySelector("[data-days]");
+        days.forEach(function (day) {
+          var section = el("section", "day");
+          var date = new Date(day.date + "T12:00:00");
+          var h3 = el("h3", "", date.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" }));
+          if (day.date === todayIso) { h3.appendChild(document.createTextNode(" · ")); h3.appendChild(el("span", "today", "Today")); }
+          section.appendChild(h3);
+          if (!day.items.length) section.appendChild(el("p", "empty", "Nothing scheduled."));
+          day.items.forEach(function (item) {
+            var row = el("div", "item" + (item.done ? " done" : ""));
+            row.appendChild(el("div", "time", clock(item.start)));
+            var what = el("div", "what");
+            what.appendChild(el("span", "tag " + item.kind, item.label));
+            what.appendChild(el("strong", "", item.title));
+            var extra = [item.end ? "until " + clock(item.end) : "", item.location].filter(Boolean).join(" · ");
+            if (extra) what.appendChild(el("span", "", extra));
+            row.appendChild(what);
+            section.appendChild(row);
+          });
+          box.appendChild(section);
+        });
+        document.querySelector("[data-saved]").hidden = false;
+      }
+    })();
+  </script>
 </body>
 </html>

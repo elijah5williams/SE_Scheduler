@@ -1,5 +1,6 @@
 from datetime import time, timedelta
 
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
@@ -8,14 +9,31 @@ from planner.services import generate_study_plan
 
 
 class Command(BaseCommand):
-    help = "Replace current planner data with a presentation-ready demo week."
+    help = "Fill one account (default: demo) with a presentation-ready demo week. Other accounts are untouched."
 
-    def handle(self, *args, **options):
-        StudySession.objects.all().delete()
-        RoutineSession.objects.all().delete()
-        FlexibleRoutine.objects.all().delete()
-        AcademicTask.objects.all().delete()
-        Event.objects.all().delete()
+    def add_arguments(self, parser):
+        parser.add_argument("--username", default="demo", help="Account to fill. Created if it doesn't exist.")
+        parser.add_argument("--password", help="Password for a newly created account (default: none, so it can't log in).")
+
+    def handle(self, *args, username, password=None, **options):
+        user, created = get_user_model().objects.get_or_create(username=username, defaults={"first_name": "Demo"})
+        if created:
+            if password:
+                user.set_password(password)
+            else:
+                user.set_unusable_password()
+            user.save()
+        profile = user.profile
+        profile.verification_status = profile.VERIFIED
+        profile.verified_role = profile.role
+        profile.save()
+
+        # Only this account's planner items are replaced.
+        StudySession.objects.filter(task__user=user).delete()
+        RoutineSession.objects.filter(routine__user=user).delete()
+        FlexibleRoutine.objects.filter(user=user).delete()
+        AcademicTask.objects.filter(user=user).delete()
+        Event.objects.filter(user=user, assignment__isnull=True).delete()
 
         today = timezone.localdate()
         now = timezone.localtime()
@@ -30,6 +48,7 @@ class Command(BaseCommand):
         ]
         for title, event_type, offset, start, end, location, weekdays in events:
             Event.objects.create(
+                user=user,
                 title=title,
                 event_type=event_type,
                 date=today + timedelta(days=offset),
@@ -48,6 +67,7 @@ class Command(BaseCommand):
         ]
         for title, course, task_type, days, minutes, priority in tasks:
             AcademicTask.objects.create(
+                user=user,
                 title=title,
                 course=course,
                 task_type=task_type,
@@ -57,12 +77,14 @@ class Command(BaseCommand):
             )
 
         FlexibleRoutine.objects.create(
+            user=user,
             title="Bible study",
             duration_minutes=20,
             weekdays="0,1,2,3,4,5,6",
             notes="Daily reading and reflection",
         )
         FlexibleRoutine.objects.create(
+            user=user,
             title="Weekend breakfast",
             duration_minutes=25,
             weekdays="5,6",
@@ -71,5 +93,5 @@ class Command(BaseCommand):
             notes="Cafe breakfast hours",
         )
 
-        result = generate_study_plan()
-        self.stdout.write(self.style.SUCCESS(f"Demo ready. {result['message']}"))
+        result = generate_study_plan(user)
+        self.stdout.write(self.style.SUCCESS(f"Demo ready for {user.username}. {result['message']}"))

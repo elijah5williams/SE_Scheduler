@@ -1,0 +1,64 @@
+{% extends "planner/base.html" %}
+
+{% block title %}More · Athlete Academic Assistant{% endblock %}
+
+{% block content %}
+<div class="more-page">
+  <section class="more-group" aria-labelledby="more-pages">
+    <h2 id="more-pages">Pages</h2>
+    <a class="more-row" href="{% url 'planner:home' %}"><span class="ic" aria-hidden="true">🏠</span><span class="txt">Greyhounds home<small>Photos, your next game and latest scores</small></span><span class="chev" aria-hidden="true">›</span></a>
+    {% if is_coach %}
+      <a class="more-row" href="{% url 'planner:coach_staff' %}"><span class="ic" aria-hidden="true">👥</span><span class="txt">Coaching staff</span><span class="chev" aria-hidden="true">›</span></a>
+      <a class="more-row" href="{% url 'planner:team_create' %}"><span class="ic" aria-hidden="true">＋</span><span class="txt">New team</span><span class="chev" aria-hidden="true">›</span></a>
+    {% else %}
+      <a class="more-row" href="{% url 'planner:tasks' %}"><span class="ic" aria-hidden="true">📝</span><span class="txt">Academic work<small>Assignments, exams, projects and readings</small></span><span class="chev" aria-hidden="true">›</span></a>
+      <a class="more-row" href="{% url 'planner:team_join' %}"><span class="ic" aria-hidden="true">🏈</span><span class="txt">Join a team</span><span class="chev" aria-hidden="true">›</span></a>
+    {% endif %}
+  </section>
+
+  <section class="more-group" aria-labelledby="more-notify">
+    <h2 id="more-notify">Notifications</h2>
+    <label class="more-row" for="pushSwitch">
+      <span class="ic" aria-hidden="true">🔔</span>
+      <span class="txt">Phone notifications<small>{% if is_coach %}Game time changes and final scores{% else %}New or changed team events, game times and final scores{% endif %}</small></span>
+      <span class="toggle-switch">
+        <input type="checkbox" role="switch" id="pushSwitch" data-push-toggle
+               data-key="{% if push_enabled %}{{ vapid_public_key }}{% endif %}"
+               data-subscribe-url="{% url 'planner:push_subscribe' %}"
+               data-unsubscribe-url="{% url 'planner:push_unsubscribe' %}">
+        <span></span>
+      </span>
+    </label>
+    <p class="more-note" data-push-note aria-live="polite"></p>
+    <button type="button" class="more-row" data-push-test data-url="{% url 'planner:push_test' %}" hidden><span class="ic" aria-hidden="true">📨</span><span class="txt">Send me a test notification</span></button>
+  </section>
+
+  <section class="more-group" aria-labelledby="more-look">
+    <h2 id="more-look">Appearance</h2>
+    <div class="more-row">
+      <span class="ic" aria-hidden="true">🌓</span>
+      <span class="txt" id="themeLabel">Theme<small>Auto matches your phone's light or dark setting</small></span>
+    </div>
+    <div class="theme-choice" role="group" aria-labelledby="themeLabel" data-theme-choice>
+      <button type="button" data-theme-value="auto" aria-pressed="true">Auto</button>
+      <button type="button" data-theme-value="light" aria-pressed="false">Light</button>
+      <button type="button" data-theme-value="dark" aria-pressed="false">Dark</button>
+    </div>
+  </section>
+
+  <section class="more-group" aria-labelledby="more-cal">
+    <h2 id="more-cal">Phone calendar</h2>
+    <a class="more-row" href="{{ calendar_webcal }}"><span class="ic" aria-hidden="true">📅</span><span class="txt">Add to Apple Calendar<small>Your schedule stays up to date in your calendar app</small></span><span class="chev" aria-hidden="true">›</span></a>
+    <a class="more-row" href="{{ calendar_google }}" target="_blank" rel="noopener"><span class="ic" aria-hidden="true">🗓</span><span class="txt">Add to Google Calendar</span><span class="chev" aria-hidden="true">›</span></a>
+  </section>
+
+  <section class="more-group" aria-labelledby="more-account">
+    <h2 id="more-account">Account</h2>
+    <div class="more-row"><span class="ic" aria-hidden="true">👤</span><span class="txt">{{ user.get_full_name|default:user.username }}<small>{{ user.profile.display_title|default:user.email }}</small></span></div>
+    <p class="more-note app-only">The app saves the next two weeks of your schedule on this phone so you can check it with no signal. Logging out deletes it.</p>
+    <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+      <button type="submit" class="more-row danger"><span class="ic" aria-hidden="true">↩</span><span class="txt">Log out</span></button>
+    </form>
+  </section>
+</div>
+{% endblock %}

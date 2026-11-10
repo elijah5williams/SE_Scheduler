@@ -9,9 +9,40 @@
   <meta name="apple-mobile-web-app-title" content="Athlete Planner">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <script>
+    /* Light or dark: "auto" follows the phone/computer setting; Light/Dark is chosen on the More page. */
+    (function () {
+      var root = document.documentElement, choice;
+      try { choice = localStorage.getItem("theme"); } catch (e) {}
+      if (choice !== "light" && choice !== "dark") choice = "auto";
+      var mq = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
+      function apply() {
+        var dark = choice === "dark" || (choice === "auto" && !!(mq && mq.matches));
+        root.classList.toggle("dark", dark);
+        root.dataset.themeChoice = choice;
+        root.style.colorScheme = dark ? "dark" : "light";
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", dark ? "#0b1626" : "#0a2240");
+      }
+      apply();
+      if (mq && mq.addEventListener) mq.addEventListener("change", function () { if (choice === "auto") apply(); });
+      window.setTheme = function (value) {
+        choice = value === "light" || value === "dark" ? value : "auto";
+        try { choice === "auto" ? localStorage.removeItem("theme") : localStorage.setItem("theme", choice); } catch (e) {}
+        apply();
+      };
+    })();
+    /* Opened from the home screen? Then show the app layout (tab bar etc.) before the page paints. */
+    (function () {
+      var mm = window.matchMedia;
+      var app = navigator.standalone === true ||
+        (mm && (mm("(display-mode: standalone)").matches || mm("(display-mode: fullscreen)").matches));
+      if (app) document.documentElement.classList.add("is-app");
+    })();
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
         navigator.serviceWorker.register("{% url 'pwa_service_worker' %}", { scope: "/" }).catch(function () {});
       });
     }
   </script>
+  <link rel="stylesheet" href="{% static 'planner/app-mode.css' %}?v=2026-11-10b">
+  <link rel="stylesheet" href="{% static 'planner/dark.css' %}?v=2026-11-10a">

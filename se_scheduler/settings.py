@@ -61,6 +61,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "planner.context_processors.app_shell",
             ],
         },
     }
@@ -121,6 +122,13 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Phone notifications for the installed app. Create keys with `python manage.py generate_vapid_keys`.
+# Leave unset to turn notifications off.
+VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
+VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
+VAPID_SUBJECT = os.environ.get("VAPID_SUBJECT", "mailto:noreply@assumption.edu")
+PUSH_SEND_INLINE = False  # tests set this so notifications send right away
 
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "/"

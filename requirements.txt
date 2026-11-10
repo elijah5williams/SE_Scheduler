@@ -4,3 +4,4 @@ dj-database-url>=2.2
 gunicorn>=23.0
 psycopg[binary]>=3.2
 whitenoise>=6.7
+pywebpush>=2.0,<3

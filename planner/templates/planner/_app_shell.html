@@ -1,0 +1,66 @@
+{% load static %}
+{% comment %}
+  Phone-app parts of every signed-in page. The tab bar, + menu and pull-to-refresh only
+  appear in the installed app (html.is-app); the "Get the app" banner only in a phone browser.
+{% endcomment %}
+{% with profile=user.profile name=request.resolver_match.url_name %}
+{% if user.is_authenticated %}
+<nav class="app-tabbar" aria-label="App">
+  {% if profile.role == 'coach' %}
+    <a class="app-tab{% if name == 'coach_dashboard' %} on{% endif %}" href="{% url 'planner:coach_dashboard' %}"{% if name == 'coach_dashboard' %} aria-current="page"{% endif %}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Team</a>
+    <a class="app-tab{% if name == 'coach_schedule' or name == 'assignment_create' or name == 'assignment_update' %} on{% endif %}" href="{% url 'planner:coach_schedule' %}"{% if name == 'coach_schedule' %} aria-current="page"{% endif %}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Schedule</a>
+  {% else %}
+    <a class="app-tab{% if name == 'dashboard' %} on{% endif %}" href="{% url 'planner:dashboard' %}"{% if name == 'dashboard' %} aria-current="page"{% endif %}>
+      <span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span class="badge-dot" data-app-badge hidden></span></span>Today</a>
+    <a class="app-tab{% if name == 'schedule' or name == 'event_create' or name == 'event_update' %} on{% endif %}" href="{% url 'planner:schedule' %}"{% if name == 'schedule' %} aria-current="page"{% endif %}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Schedule</a>
+  {% endif %}
+  <button type="button" class="app-tab app-tab-add" data-sheet-open aria-haspopup="dialog" aria-controls="appAddSheet">
+    <span class="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span class="sr-only">Add</span></button>
+  {% if profile.role == 'coach' %}
+    <a class="app-tab{% if name == 'coach_roster' %} on{% endif %}" href="{% url 'planner:coach_roster' %}"{% if name == 'coach_roster' %} aria-current="page"{% endif %}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Roster</a>
+  {% else %}
+    <a class="app-tab{% if name == 'study_planner' or name == 'routine_create' or name == 'routine_update' %} on{% endif %}" href="{% url 'planner:study_planner' %}"{% if name == 'study_planner' %} aria-current="page"{% endif %}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Planner</a>
+  {% endif %}
+  <a class="app-tab{% if name == 'app_more' or name == 'home' or name == 'tasks' or name == 'task_create' or name == 'task_update' or name == 'team_join' or name == 'coach_staff' or name == 'team_create' %} on{% endif %}" href="{% url 'planner:app_more' %}"{% if name == 'app_more' %} aria-current="page"{% endif %}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>More</a>
+</nav>
+
+<div class="app-sheet-backdrop" data-sheet-close></div>
+<div class="app-sheet" id="appAddSheet" role="dialog" aria-modal="true" aria-labelledby="appAddTitle">
+  <div class="grab" aria-hidden="true"></div>
+  <h2 id="appAddTitle">Add</h2>
+  {% if profile.role == 'coach' %}
+    {% for team in app_coach_teams %}
+      <a href="{% url 'planner:assignment_create' team.pk %}"><span class="ic" aria-hidden="true">📣</span><span>Assign to {{ team.name }}<small>Practice, workout or meeting · athletes get notified</small></span></a>
+    {% endfor %}
+    <a href="{% url 'planner:team_create' %}"><span class="ic" aria-hidden="true">＋</span><span>New team</span></a>
+  {% else %}
+    <a href="{% url 'planner:task_create' %}"><span class="ic" aria-hidden="true">📝</span><span>Academic work<small>Assignment, exam, project or reading</small></span></a>
+    <a href="{% url 'planner:event_create' %}"><span class="ic" aria-hidden="true">🗓</span><span>Commitment<small>Class, practice, workout or meeting</small></span></a>
+    <a href="{% url 'planner:routine_create' %}"><span class="ic" aria-hidden="true">↻</span><span>Flexible routine<small>Placed in your free time each day</small></span></a>
+    <a href="{% url 'planner:team_join' %}"><span class="ic" aria-hidden="true">🏈</span><span>Join a team<small>Use the code from your coach</small></span></a>
+  {% endif %}
+</div>
+
+<div class="app-ptr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+{% endif %}
+
+<div class="app-toast" role="status" aria-live="polite" hidden><span data-toast-text></span><button type="button" data-toast-action hidden></button></div>
+
+<div class="app-install" hidden>
+  <img src="{% static 'planner/icons/icon-192.png' %}" alt="">
+  <div><strong>Get the app</strong><span class="how" data-install-how>Add Athlete Planner to your home screen.</span></div>
+  <button type="button" class="go" data-install-go hidden>Install</button>
+  <button type="button" class="x" data-install-dismiss aria-label="Not now">×</button>
+</div>
+
+<script src="{% static 'planner/app-mode.js' %}?v=2026-11-10a" defer
+        data-status-url="{% url 'planner:app_status' %}"
+        data-offline-url="{% url 'planner:app_offline_data' %}"
+        data-signed-in="{{ user.is_authenticated|yesno:'1,0' }}"></script>
+{% endwith %}
