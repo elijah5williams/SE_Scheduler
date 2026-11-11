@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,700;6..96,800&family=Pinyon+Script&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'planner/topnav.css' %}?v=2026-11-08">
-  <link rel="stylesheet" href="{% static 'planner/home.css' %}?v=2026-11-08c">
+  <link rel="stylesheet" href="{% static 'planner/home.css' %}?v=2026-11-11b">
   {% include "planner/_pwa_head.html" %}
 </head>
 <body>
@@ -165,5 +165,16 @@
     })();
   </script>
 {% include "planner/_app_shell.html" %}
+  <script>
+    // Add a stronger shadow once the score bar is pinned to the top.
+    (function () {
+      var bar = document.querySelector(".ticker");
+      if (!bar || !("IntersectionObserver" in window)) return;
+      var marker = document.createElement("div");
+      marker.style.height = "1px";
+      bar.parentNode.insertBefore(marker, bar);
+      new IntersectionObserver(function (e) { bar.classList.toggle("stuck", !e[0].isIntersecting); }).observe(marker);
+    })();
+  </script>
 </body>
 </html>

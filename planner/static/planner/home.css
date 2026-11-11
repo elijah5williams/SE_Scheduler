@@ -19,7 +19,7 @@ body {
     color: var(--ink-2);
     font-family: var(--sans);
     -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
+    overflow-x: clip; /* clip, not hidden, so the sticky score bar keeps working */
 }
 /* soft clouds and a faint horizon ring, like the login page */
 body::before {
@@ -212,3 +212,25 @@ a { color: inherit; }
 
 @media (max-width: 1360px) { .ticker { margin: 0 32px; } }
 @media (max-width: 980px) { .ticker { margin: 4px 16px 0; } .stage { margin-top: 8px; } }
+
+/* Sticky live scores: stays pinned to the top of the screen while scrolling */
+.ticker {
+    position: sticky;
+    top: max(10px, env(safe-area-inset-top));
+    z-index: 30;
+    transition: box-shadow .2s, border-radius .2s;
+}
+.ticker.stuck { box-shadow: 0 16px 40px rgba(20, 23, 29, .35); overflow: visible; }
+/* frosted sky band behind the pinned bar so content scrolling underneath doesn't peek around it */
+.ticker.stuck::before {
+    content: ""; position: absolute; z-index: -1;
+    left: -100vw; right: -100vw; top: calc(-1 * max(10px, env(safe-area-inset-top)) - 2px); bottom: -10px;
+    background: rgba(183, 220, 246, .82);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+}
+.ticker.stuck .ticker-label { border-radius: 16px 0 0 16px; }
+.ticker.stuck .ticker-track { border-radius: 0 16px 16px 0; background: linear-gradient(180deg, #1c2029, #14171d); }
+@media (max-width: 980px) {
+    .ticker { top: max(6px, env(safe-area-inset-top)); }
+    .ticker.stuck::before { top: calc(-1 * max(6px, env(safe-area-inset-top)) - 2px); bottom: -6px; }
+}
