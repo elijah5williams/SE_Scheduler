@@ -92,4 +92,30 @@
         {% endfor %}
     </div>
 </section>
+
+<section class="panel manage-panel routine-panel" id="routines">
+    <div class="panel-header">
+        <div><span class="eyebrow">Fits wherever you are free</span><h2>Manage routines</h2></div>
+        <a class="button button-primary schedule-add-button" href="{% url 'planner:routine_create' %}?next={{ request.path|urlencode }}%23routines">+ Add routine</a>
+    </div>
+    <p class="manage-intro">Flexible routines, like Bible study or stretching, are placed into your open time by the Smart Planner. Change how long they take, which days they happen, or when they're allowed, or remove ones you've stopped.</p>
+    <div class="commitment-list">
+        {% for routine in routines %}
+            <article class="commitment-row{% if not routine.active %} is-paused{% endif %}">
+                <span class="commitment-color type-routine"></span>
+                <div class="commitment-main">
+                    <span class="tag">Routine{% if not routine.active %} · Paused{% endif %}</span>
+                    <h3>{{ routine.title }}</h3>
+                    <p>{{ routine.duration_minutes }} min · {{ routine.schedule_summary }} · {{ routine.window_summary }}</p>
+                </div>
+                <div class="commitment-actions">
+                    <a class="button button-ghost button-small" href="{% url 'planner:routine_update' routine.pk %}?next={{ request.path|urlencode }}%23routines">Edit</a>
+                    <a class="button button-delete button-small" href="{% url 'planner:routine_delete' routine.pk %}?next={{ request.path|urlencode }}%23routines">Delete</a>
+                </div>
+            </article>
+        {% empty %}
+            <div class="empty-state compact"><span>↻</span><h3>No routines yet</h3><p>Add something you want to fit in every week, and the planner will find the time.</p></div>
+        {% endfor %}
+    </div>
+</section>
 {% endblock %}

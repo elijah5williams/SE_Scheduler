@@ -468,3 +468,36 @@ class SecurityTests(StudentTestCase):
             self.client.post(reverse("planner:team_join"), {"code": "WRONG1"})
         self.client.post(reverse("planner:team_join"), {"code": team.join_code})
         self.assertFalse(team.athletes.filter(pk=self.user.pk).exists())
+
+
+class ManageRoutinesTests(StudentTestCase):
+    def test_schedule_lists_routines_with_edit_and_delete(self):
+        routine = FlexibleRoutine.objects.create(user=self.user, title="Bible study", duration_minutes=20)
+        page = self.client.get(reverse("planner:schedule"))
+        self.assertContains(page, "Manage routines")
+        self.assertContains(page, "Bible study")
+        self.assertContains(page, reverse("planner:routine_update", args=[routine.pk]) + "?next=")
+
+    def test_edit_and_delete_from_schedule_return_to_schedule(self):
+        routine = FlexibleRoutine.objects.create(user=self.user, title="Stretching", duration_minutes=15)
+        nxt = "?next=" + reverse("planner:schedule")
+        response = self.client.post(
+            reverse("planner:routine_update", args=[routine.pk]) + nxt,
+            {"title": "Stretching", "duration_minutes": 25, "weekdays": ["0", "2", "4"], "active": "on"},
+        )
+        self.assertRedirects(response, reverse("planner:schedule"), fetch_redirect_response=False)
+        routine.refresh_from_db()
+        self.assertEqual(routine.duration_minutes, 25)
+        response = self.client.post(reverse("planner:routine_delete", args=[routine.pk]) + nxt)
+        self.assertRedirects(response, reverse("planner:schedule"), fetch_redirect_response=False)
+        self.assertFalse(FlexibleRoutine.objects.filter(pk=routine.pk).exists())
+
+    def test_outside_next_links_are_ignored(self):
+        routine = FlexibleRoutine.objects.create(user=self.user, title="Reading", duration_minutes=20)
+        response = self.client.post(reverse("planner:routine_delete", args=[routine.pk]) + "?next=https://evil.example/")
+        self.assertRedirects(response, reverse("planner:study_planner"), fetch_redirect_response=False)
+
+    def test_other_users_routines_are_not_listed(self):
+        other = User.objects.create_user("other")
+        FlexibleRoutine.objects.create(user=other, title="Someone else's yoga", duration_minutes=20)
+        self.assertNotContains(self.client.get(reverse("planner:schedule")), "Someone else")

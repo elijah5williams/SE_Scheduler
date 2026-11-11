@@ -29,7 +29,7 @@
                     {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
                 </div>
             {% endfor %}
-            <div class="form-actions full"><a class="button button-ghost" href="{% if form_type == 'event' %}{% url 'planner:schedule' %}{% elif form_type == 'routine' %}{% url 'planner:study_planner' %}{% else %}{% url 'planner:tasks' %}{% endif %}">Cancel</a><button class="button button-primary" type="submit">{% if editing %}Save changes{% else %}Add to my plan{% endif %}</button></div>
+            <div class="form-actions full"><a class="button button-ghost" href="{% if cancel_url %}{{ cancel_url }}{% elif form_type == 'event' %}{% url 'planner:schedule' %}{% elif form_type == 'routine' %}{% url 'planner:study_planner' %}{% else %}{% url 'planner:tasks' %}{% endif %}">Cancel</a><button class="button button-primary" type="submit">{% if editing %}Save changes{% else %}Add to my plan{% endif %}</button></div>
         </form>
     </section>
 </div>

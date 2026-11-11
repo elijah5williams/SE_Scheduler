@@ -201,3 +201,8 @@ body::before {
 .cal-reset button { padding: 0; border: 0; background: none; color: var(--navy-2); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
 .gh-weather .wx { display: inline-block; padding: 5px 12px; border-radius: 999px; background: rgba(255, 255, 255, .12); color: #fff; font-weight: 600; }
 @media (max-width: 640px) { .cal-card { flex-direction: column; } }
+
+/* Manage routines (My Schedule) */
+.routine-panel { margin-top: 22px; }
+.commitment-row.is-paused { opacity: .6; }
+.commitment-color.type-routine { background: #7b6aa6; }

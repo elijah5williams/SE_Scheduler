@@ -229,6 +229,7 @@ def schedule(request):
             **calendar_links(request),
             # Team games and coach-assigned events are managed by the team, not here.
             "all_events": Event.objects.filter(user=request.user, assignment__isnull=True),
+            "routines": FlexibleRoutine.objects.filter(user=request.user).order_by("-active", "title"),
         },
     )
 
@@ -365,6 +366,14 @@ def course_delete(request, course):
     )
 
 
+def _next_or(request, default):
+    """Where to go after a routine change: back to the page that sent you (e.g. My Schedule), if it's on this site."""
+    target = request.GET.get("next") or request.POST.get("next") or ""
+    if target and url_has_allowed_host_and_scheme(target, allowed_hosts={request.get_host()}):
+        return target
+    return reverse(default)
+
+
 @login_required
 def routine_create(request):
     form = FlexibleRoutineForm(request.POST or None)
@@ -373,11 +382,12 @@ def routine_create(request):
         routine.user = request.user
         routine.save()
         messages.success(request, f"{routine.title} was added. Generate a new plan to schedule it.")
-        return redirect("planner:study_planner")
+        return redirect(_next_or(request, "planner:study_planner"))
     return render(
         request,
         "planner/form_page.html",
-        {"form": form, "form_type": "routine", "title": "Add a flexible routine"},
+        {"form": form, "form_type": "routine", "title": "Add a flexible routine",
+         "cancel_url": _next_or(request, "planner:study_planner")},
     )
 
 
@@ -388,11 +398,12 @@ def routine_update(request, pk):
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Flexible routine updated. Generate a new plan to apply the change.")
-        return redirect("planner:study_planner")
+        return redirect(_next_or(request, "planner:study_planner"))
     return render(
         request,
         "planner/form_page.html",
-        {"form": form, "form_type": "routine", "title": "Edit flexible routine", "editing": True},
+        {"form": form, "form_type": "routine", "title": "Edit flexible routine", "editing": True,
+         "cancel_url": _next_or(request, "planner:study_planner")},
     )
 
 
@@ -403,11 +414,11 @@ def routine_delete(request, pk):
         title = routine.title
         routine.delete()
         messages.success(request, f"{title} and its generated sessions were removed.")
-        return redirect("planner:study_planner")
+        return redirect(_next_or(request, "planner:study_planner"))
     return render(
         request,
         "planner/confirm_delete.html",
-        {"object": routine, "cancel_url": reverse("planner:study_planner")},
+        {"object": routine, "cancel_url": _next_or(request, "planner:study_planner")},
     )
 
 
